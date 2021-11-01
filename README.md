@@ -3,8 +3,11 @@
 
 때문에 fairseq, pororo의 복잡한 dependency없이 쉬운 사용이 가능해집니다.
 
-# Support Tasks
+## Support Tasks
 - Translation
 - Named Entity Recognition
 - Natural Language Inference
 - Machine Reading Comprehension
+
+## Reference
+- https://github.com/kakaobrain/pororo
