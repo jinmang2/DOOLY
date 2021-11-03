@@ -5,6 +5,12 @@
 
 windows 환경에서 사용도 가능합니다.
 
+- How to install?
+
+```console
+pip install dooly
+```
+
 ## Support Tasks
 - Translation
 - Named Entity Recognition
