@@ -7,7 +7,7 @@ with open("dooly/__version__.py", "r") as version_file:
     
 
 setup(name='dooly', 
-      version=VERSION["version"]
+      version=VERSION["version"],
       url='https://github.com/jinmang2/dooly', 
       author='jinmang2', 
       author_email='jinmang2@gmail.com', 
