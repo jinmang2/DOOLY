@@ -1,0 +1,1 @@
+HUB_PATH_OR_URL = "jinmang2/dooly-hub"
