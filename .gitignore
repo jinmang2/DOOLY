@@ -9,6 +9,9 @@ __pycache__/
 # Cache folder
 cache/
 
+# Extensions
+*.ipynb
+
 # Distribution / packaging
 .Python
 build/
