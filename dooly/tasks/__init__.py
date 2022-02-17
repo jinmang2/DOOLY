@@ -1,0 +1,2 @@
+from .named_entity_recognition import NamedEntityRecognition
+from .word_sense_disambiguation import WordSenseDisambiguation
