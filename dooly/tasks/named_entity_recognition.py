@@ -1,14 +1,15 @@
+import re
 from typing import List, Dict, Tuple, Union
 from collections import defaultdict
 
 from .word_sense_disambiguation import WordSenseDisambiguation
-
-from .base import DoolyTaskBase
-from ..models import DoolyModel
-from ..tokenizers import DoolyTokenizer
+from .base import SequenceTagging
 
 
-class NamedEntityRecognition(DoolyTaskBase):
+SentenceWithTags = List[Tuple[str, str]]
+
+
+class NamedEntityRecognition(SequenceTagging):
     """
     Conduct named entity recognition
 
@@ -44,16 +45,25 @@ class NamedEntityRecognition(DoolyTaskBase):
         "ja": ["jaberta.base"],
         "zh": ["zhberta.base"],
     }
+    misc_files: Dict[str, List[str]] = {
+        "ko": ["wiki.ko.items"]
+    }
 
     def __init__(
         self,
         lang: str,
         n_model: str,
-        tokenizer: DoolyTokenizer,
-        model: DoolyModel,
+        device: str,
+        tokenizer,
+        model,
         wsd_dict: Dict = {},
     ):
-        super().__init__(lang=lang, n_model=n_model)
+        super().__init__(lang=lang, n_model=n_model, device=device)
+
+        use_sentence_tokenizer = "charbert" in n_model
+        if use_sentence_tokenizer:
+            tokenizer._set_sent_tokenizer()
+
         self._tokenizer = tokenizer
         self._model = model
         self._wsd_dict = wsd_dict
@@ -65,7 +75,7 @@ class NamedEntityRecognition(DoolyTaskBase):
 
     def __call__(
         self,
-        sentence: Union[List[str], str],
+        sentences: Union[List[str], str],
         add_special_tokens: bool = True, # ENBERTa, JaBERTa, ZhBERTa에선 없음
         no_separator: bool = False,
         do_sent_split: bool = True,
@@ -75,60 +85,193 @@ class NamedEntityRecognition(DoolyTaskBase):
         if apply_wsd and self.lang != "ko":
             apply_wsd = False
 
-        if instance(sentence, str):
-            sentence = [sentence]
-
-        sentences = sentence
+        if isinstance(sentences, str):
+            sentences = [sentences]
 
         # Sentence split
         if do_sent_split:
-            texts, n_sents = self._tokenizer.sent_tokenize(sentences)
-            texts = [sentence for sentences in texts for sentence in sentences]
+            sentences, n_sents = self._tokenizer.sent_tokenize(sentences)
+            sentences = [sentence for sents in sentences for sentence in sents]
         else:
             n_sents = [1] * len(sentences)
 
         token_label_pairs = self.predict_tags(
-            sentence=sentences,
+            sentences=sentences,
             add_special_tokens=add_special_tokens,
             no_separator=no_separator,
             do_sent_split=do_sent_split,
         )
 
         # Post processing
+        postprocessed = [self._postprocess(sentence) for sentence in token_label_pairs]
+
+        if apply_wsd:
+            postprocessed = self._apply_wsd(postprocessed)
+
+        sents_with_tag = self._apply_dict(postprocessed)
+
+        # Merge divided sentences into batches
         results = []
         ix = 0
         for n_sent in n_sents:
             result = []
             for _ in range(n_sent):
-                res = []
-                sentence = token_label_pairs[ix]
-                for pair in self._postprocess(sentence):
-                    if pair[1] not in ignore_labels:
-                        if apply_wsd:
-                            pair = self._apply_wsd(pair)
-                        res.append(pair)
-                result.extend(self._apply_dict(res))
+                result.extend(sents_with_tag[ix])
                 result.extend([(" ", "O")])
                 ix += 1
             results.append(result[:-1])
+
         return results
 
-    def _apply_dict(self, tags: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    def _template_match(self, text, expression2category):
         """
-        Apply pre-defined dictionary to get detail tag info
+        Apply template match using regular expression
+
+        Args:
+            text (str): text to be searched
+            expression2category (dict): regular expression dict
+
+        Returns:
+            str: regex matched category
+
+        """
+        for expression, category in expression2category.items():
+            if re.search(expression, text) is not None:
+                return category
+
+    def _apply_wsd(self, tags: List[SentenceWithTags]) -> List[SentenceWithTags]:
+        """
+        Apply Word Sense Disambiguation to get detail tag info
+
         Args:
             tags (List[Tuple[str, str]]): inference word-tag pair result
+
+        Returns:
+            List[Tuple[str, str]]: wsd-applied result
+
+        """
+        if self._wsd is None:
+            from . import WordSenseDisambiguation
+            self._wsd = WordSenseDisambiguation.build(lang="ko", n_model="transformer.large")
+
+        if self._cls2cat is None:
+            self._cls2cat = dict()
+            lines = self._build_misc(self.lang, self.n_model, ["wsd.cls.txt"])
+            for line in lines:
+                morph, homonymno, category = line.split()
+                classifier = f"{morph}__NNB__{homonymno}"  # bound noun
+                self._cls2cat[classifier] = category
+
+        if self._quant2cat is None:
+            self._quant2cat = dict()
+            self._term2cat = dict()
+            lines = self._build_misc(self.lang, self.n_model, ["re.templates.txt"])
+            for line in lines:
+                category, ner_category, expression = line.split(" ", 2)
+                if ner_category == "QUANTITY":
+                    self._quant2cat[expression] = category
+                elif ner_category == "TERM":
+                    self._term2cat[expression] = category
+
+        def convert_tags_to_input_text_with_markers(tags: SentenceWithTags):
+            input_text_with_markers = str()
+            target_token_ids = []
+
+            for idx, ner_token in enumerate(tags):
+                surface, tag = ner_token
+                # as {} will be used as special symbols
+                surface = surface.replace("{", "｛")
+                surface = surface.replace("}", "｝")
+
+                if tag == "TERM":
+                    cat = self._template_match(surface, self._term2cat)
+                    if cat is not None:
+                        tags[idx] = (surface, cat)
+                    input_text_with_markers += surface
+                elif tag == "QUANTITY":
+                    cat = self._template_match(surface, self._quant2cat)
+                    if cat is not None:
+                        tags[idx] = (surface, cat)
+                        input_text_with_markers += surface
+                    else:
+                        target_token_ids.append(idx)
+                        input_text_with_markers += "{" + surface + "}"
+                else:
+                    input_text_with_markers += surface
+
+            return input_text_with_markers, target_token_ids
+
+        inputs = []
+        targets = []
+        for sent_tags in tags:
+            results = convert_tags_to_input_text_with_markers(sent_tags)
+            inputs.append(results[0])
+            targets.append(results[1])
+
+        batch_results = self._wsd(inputs)
+
+        def convert_wsd_results_to_tags(wsd_results, tags, target_token_ids):
+            action = False
+            has_category = False
+            categories = []
+
+            for wsd_token in wsd_results:
+                morph, tag, homonymno = wsd_token[:3]
+                if morph == "{":
+                    has_category = False
+                    action = True
+                elif morph == "}":
+                    if has_category is False:
+                        categories.append("QUANTITY")  # original category
+                    has_category = False
+                    action = False
+
+                if action:
+                    if homonymno is None:
+                        homonymno = "00"
+
+                    query = f"{morph}__{tag}__{homonymno}"
+                    if query in self._cls2cat:
+                        category = self._cls2cat[query]
+                        categories.append(category)
+                        has_category = True
+                        action = False
+
+            assert len(target_token_ids) == len(categories)
+
+            for target_token_id, cat in zip(target_token_ids, categories):
+                tags[target_token_id] = (tags[target_token_id][0], cat)
+
+            return tags
+
+        outputs = []
+        for wsd_results, _tags, target_token_ids in zip(batch_results, tags, targets):
+            outputs.append(convert_wsd_results_to_tags(wsd_results, _tags, target_token_ids))
+
+        return outputs
+
+    def _apply_dict(self, tags: List[SentenceWithTags]) -> List[SentenceWithTags]:
+        """
+        Apply pre-defined dictionary to get detail tag info
+
+        Args:
+            tags (List[Tuple[str, str]]): inference word-tag pair result
+
         Returns:
             List[Tuple[str, str]]: dict-applied result
+
         """
-        result = []
-        for pair in tags:
-            word, tag = pair
-            if (tag in self._wsd_dict.keys()) and (word in self._wsd_dict[tag]):
-                result.append((word, self._wsd_dict[tag][word].upper()))
-            else:
-                result.append(pair)
-        return result
+        results = []
+        for _tags in tags:
+            result = []
+            for pair in _tags:
+                word, tag = pair
+                if (tag in self._wsd_dict.keys()) and (word in self._wsd_dict[tag]):
+                    result.append((word, self._wsd_dict[tag][word].upper()))
+                else:
+                    result.append(pair)
+            results.append(result)
+        return results
 
     def _postprocess(self, tags: List[Tuple[str, str]]):
         """
@@ -144,6 +287,7 @@ class NamedEntityRecognition(DoolyTaskBase):
             result = self._postprocess_bpe(tags)
         return result
 
+    @staticmethod
     def _remove_head(tag: str) -> str:
         if "-" in tag:
             tag = tag[2:]
@@ -180,6 +324,7 @@ class NamedEntityRecognition(DoolyTaskBase):
             result.append((word[:-1], self._remove_head(tag)))
             result.append((".", "O"))
         else:
+            # @TODO: what is this method?
             result.append((word, self.predict_srl_remove_head(tag)))
 
         return [pair for pair in result if pair[0]]
@@ -195,7 +340,7 @@ class NamedEntityRecognition(DoolyTaskBase):
             tag = self._remove_head(ori_tag)
 
             if ("▁" in char) and ("I-" not in ori_tag):
-                result.append((tmp_word, prev_orig))
+                result.append((tmp_word, prev_tag))
                 result.append((" ", "O"))
 
                 tmp_word = char
@@ -208,7 +353,7 @@ class NamedEntityRecognition(DoolyTaskBase):
                 tmp_word += char
             else:
                 result.append((tmp_word, prev_tag))
-                tmp_word += char
+                tmp_word = char
 
             prev_tag = tag
         result.append((tmp_word, prev_tag))
@@ -221,37 +366,18 @@ class NamedEntityRecognition(DoolyTaskBase):
         return result
 
     @classmethod
-    def build(
+    def build_misc(
         cls,
-        lang: str = None,
-        n_model: str = None,
-        **kwargs
-    ):
-        lang, n_model = cls._check_validate_input(lang, n_model)
-
-        use_sentence_tokenizer = use_wsd = False
-        if "charbert" in n_model:
-            use_sentence_tokenizer = use_wsd = True
-
-        dl_kwargs, tok_kwargs, model_kwargs = cls._parse_build_kwargs(
-            DoolyTokenizer, **kwargs)
-
-        # set tokenizer
-        tokenizer = DoolyTokenizer.from_pretrained(
-            cls.task, lang, n_model, **dl_kwargs, **tok_kwargs)
-        if use_sentence_tokenizer:
-            tokenizer._set_sent_tokenizer()
-        # set model
-        model = DoolyModel.from_pretrained(
-            cls.task, lang, n_model, **dl_kwargs, **model_kwargs)
-        # set misc
+        lang: str,
+        n_model: str,
+        misc_files: List[str],
+        **dl_kwargs,
+    ) -> Tuple: # overrides
         wsd_dict = {}
-        if use_wsd:
-            misc_files = ["wiki.ko.items"]
+        if "charbert" in n_model:
             f_wsd_dict = cls._build_misc(lang, n_model, misc_files, **dl_kwargs)
             wsd_dict = defaultdict(dict)
             for line in f_wsd_dict:
                 origin, target, word = line.strip().split("\t")
                 wsd_dict[origin][word] = target
-
-        return cls(lang, n_model, tokenizer, model, wsd_dict)
+        return wsd_dict
