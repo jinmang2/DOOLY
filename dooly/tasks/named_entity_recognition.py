@@ -2,7 +2,6 @@ import re
 from typing import List, Dict, Tuple, Union
 from collections import defaultdict
 
-from .word_sense_disambiguation import WordSenseDisambiguation
 from .base import SequenceTagging
 
 
