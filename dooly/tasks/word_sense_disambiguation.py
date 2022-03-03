@@ -1,12 +1,10 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple, Union
 from collections import namedtuple
 
-from .base import DoolyTaskBase
-from ..models import DoolyModel
-from ..tokenizers import DoolyTokenizer
+from .base import Seq2Seq
 
 
-class WordSenseDisambiguation(DoolyTaskBase):
+class WordSenseDisambiguation(Seq2Seq):
     """
     Conduct Word Sense Disambiguation
 
@@ -26,60 +24,68 @@ class WordSenseDisambiguation(DoolyTaskBase):
     available_models: Dict[str, List[str]] = {
         "ko": ["transformer.large"]
     }
+    misc_files = {
+        "ko": ["morph2idx.ko.pkl", "tag2idx.ko.pkl", "wsd-dicts.ko.pkl"]
+    }
 
     def __init__(
         self,
         lang: str,
         n_model: str,
-        tokenizer: DoolyTokenizer,
-        model: DoolyModel,
-        morph2idx: Dict[str, int],
-        tag2idx: Dict[str, int],
-        query2origin: Dict[str, str],
-        query2meaning: Dict[str, str],
-        query2eng: Dict[str, str],
+        device: str,
+        tokenizer,
+        model,
+        misc: Tuple,
     ):
-        super().__init__(lang=lang, n_model=n_model)
+        super().__init__(lang=lang, n_model=n_model, device=device)
         self._tokenizer = tokenizer
         self._model = model
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
-        self._morph2idx = morph2idx # morpheme to index
-        self._tag2idx = tag2idx # tag to index
-        self._query2origin = query2origin # query to origin
-        self._query2meaning = query2meaning # query to meaning
-        self._query2eng = query2eng # query to english
+        self._morph2idx: Dict[str, int] = misc[0] # morpheme to index
+        self._tag2idx: Dict[str, int] = misc[1] # tag to index
+        query2origin, query2meaning, query2eng, _ = misc[2]
+        self._query2origin: Dict[str, str] = query2origin # query to origin
+        self._query2meaning: Dict[str, str] = query2meaning # query to meaning
+        self._query2eng: Dict[str, str] = query2eng # query to english
         self._Wdetail = namedtuple(
             typename="detail",
             field_names="morph pos sense_id original meaning english",
         )
 
-    @classmethod
-    def build(
-        cls,
-        lang: str = None,
-        n_model: str = None,
-        **kwargs
+    def __call__(
+        self,
+        sentences: Union[List[str], str],
+        add_special_tokens: bool = True,
+        no_separator: bool = False,
+        beams: int = 5,
+        max_len_a: int = 4,
+        max_len_b: int = 50,
     ):
-        lang, n_model = cls._check_validate_input(lang, n_model)
+        if isinstance(sentences, str):
+            sentences = [sentences]
 
-        dl_kwargs, tok_kwargs, model_kwargs = cls._parse_build_kwargs(
-            DoolyTokenizer, **kwargs)
+        inputs = self._tokenizer(
+            sentences,
+            return_tensors=True,
+            no_separator=no_separator,
+            add_special_tokens=add_special_tokens,
+        )
+        input_ids = self._prepare_inputs(inputs)["input_ids"]
 
-        # set tokenizer
-        tokenizer = DoolyTokenizer.from_pretrained(
-            cls.task, lang, n_model, **dl_kwargs, **tok_kwargs)
-        # set model
-        model = DoolyModel.from_pretrained(
-            cls.task, lang, n_model, **dl_kwargs, **model_kwargs)
-        # set misc
-        misc_files = ["morph2idx.ko.pkl", "tag2idx.ko.pkl", "wsd-dicts.ko.pkl"]
-        misc = cls._build_misc(lang, n_model, misc_files, **dl_kwargs)
-        morph2idx = misc[0]
-        tag2idx = misc[1]
-        query2origin, query2meaning, query2eng, _ = misc[2]
+        # beam search
+        # @TODO: fix miss-match fairseq vs transformers
+        outputs = self._model.generate(
+            input_ids,
+            num_beams=beams,
+            max_length=input_ids.shape[-1] * max_len_a + max_len_b,
+        )
 
-        return cls(lang, n_model, tokenizer, model, morph2idx, tag2idx,
-                   query2origin, query2meaning, query2eng)
+        result = []
+        for output in outputs:
+            decoded_text = self._tokenizer.decode(output)
+            result.append(self._postprocess(decoded_text))
+
+        return result
 
     def _postprocess(self, output):
         eojeols = output.split("▁")
