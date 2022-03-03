@@ -65,7 +65,7 @@ class NamedEntityRecognition(SequenceTagging):
             tokenizer._set_sent_tokenizer()
 
         self._tokenizer = tokenizer
-        self._model = model
+        self._model = model.eval().to(device)
         self._wsd_dict = wsd_dict
 
         self._wsd = None

@@ -39,7 +39,7 @@ class WordSenseDisambiguation(Seq2Seq):
     ):
         super().__init__(lang=lang, n_model=n_model, device=device)
         self._tokenizer = tokenizer
-        self._model = model
+        self._model = model.eval().to(device)
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
         self._morph2idx: Dict[str, int] = misc[0] # morpheme to index
         self._tag2idx: Dict[str, int] = misc[1] # tag to index
