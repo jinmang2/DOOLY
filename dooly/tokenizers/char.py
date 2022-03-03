@@ -3,14 +3,11 @@ from typing import List
 from .base import Tokenizer
 
 
-class CharTokenizer(Tokenizer):
-    """ Character Tokenizer """
+class CharS1Tokenizer(Tokenizer):
+    """ Character Tokenizer with style 1 """
+
     def _recover_original(self, decoded_text: str) -> str:
         return decoded_text.replace(" ", "").replace("▁", " ").strip()
-
-
-class CharS1Tokenizer(CharTokenizer):
-    """ Character Tokenizer with style 1 """
 
     def _tokenize(self, text: str):
         x = text.strip()
@@ -27,7 +24,7 @@ class CharS1Tokenizer(CharTokenizer):
         return tokenized
 
 
-class CharS2Tokenizer(CharTokenizer):
+class CharS2Tokenizer(Tokenizer):
     """ Character Tokenizer with style 2 """
 
     def _tokenize(self, text: str) -> List[str]:
@@ -43,7 +40,7 @@ class CharS2Tokenizer(CharTokenizer):
         text: str,
         text_pair: str = None,
         add_special_tokens: bool = False,
-        no_seperator: bool = False,
+        no_separator: bool = False,
     ) -> List[str]:
         tokenized = self._tokenize(text)
 

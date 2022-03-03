@@ -225,7 +225,6 @@ class _BaseTokenizer:
             return self.decode(
                 ids=[ids],
                 ignore_symbols=ignore_symbols,
-                recover_original=recover_original,
             )
 
         ignore_symbols = set(None or ignore_symbols)
