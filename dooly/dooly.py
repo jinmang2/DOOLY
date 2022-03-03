@@ -28,4 +28,4 @@ class Dooly:
             raise KeyError (
                 f"Unavailable task name. See here {DOOLY_HUB_CONTENTS.keys()}"
             )
-        return hub_interface.build(lang, n_model)
+        return hub_interface.build(lang, n_model, **kwargs)
