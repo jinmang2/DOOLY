@@ -79,11 +79,18 @@ class NamedEntityRecognition(SequenceTagging):
         add_special_tokens: bool = True, # ENBERTa, JaBERTa, ZhBERTa에선 없음
         no_separator: bool = False,
         do_sent_split: bool = True,
+        ja_zh_split_force: bool = False, # deprecated
         ignore_labels: List[int] = [],
         apply_wsd: bool = False,
     ):
         if apply_wsd and self.lang != "ko":
             apply_wsd = False
+
+        if do_sent_split and self.lang == "en":
+            if not hasattr(self._tokenizer, "en_sent_tokenizer"):
+                do_sent_split = False
+        elif self.lang in ["ja", "zh"] and not ja_zh_split_force:
+            do_sent_split = False
 
         if isinstance(sentences, str):
             sentences = [sentences]
@@ -120,6 +127,9 @@ class NamedEntityRecognition(SequenceTagging):
                 result.extend([(" ", "O")])
                 ix += 1
             results.append(result[:-1])
+
+        if len(results) == 1:
+            results = results[0]
 
         return results
 
@@ -323,9 +333,10 @@ class NamedEntityRecognition(SequenceTagging):
             # In the case of English, The end mark(".") is treated as O-tag.
             result.append((word[:-1], self._remove_head(tag)))
             result.append((".", "O"))
+        elif self.lang == "ja":
+            result.append((word.replace("##", ""), self._remove_head(tag)))
         else:
-            # @TODO: what is this method?
-            result.append((word, self.predict_srl_remove_head(tag)))
+            result.append((word, self._remove_head(tag)))
 
         return [pair for pair in result if pair[0]]
 
