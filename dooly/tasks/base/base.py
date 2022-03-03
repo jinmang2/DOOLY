@@ -36,7 +36,7 @@ class DoolyTaskBase:
     def set_device(self, device: str = None):
         if device is not None:
             self.device = device
-        self._model.to(device)
+        self._model.to(self.device)
 
     @classmethod
     def build(
