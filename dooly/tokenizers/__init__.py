@@ -11,7 +11,9 @@ DoolyTokenizerHub = {
         "ja": {"jaberta.base": BpeJaZhTokenizer},
         "zh": {"zhberta.base": BpeJaZhTokenizer},
     },
-    "wsd": {"ko": {"transformer.large": CharS2Tokenizer}},
+    "wsd": {
+        "ko": {"transformer.large": CharS2Tokenizer},
+    },
 }
 available_tasks = list(DoolyTokenizerHub.keys())
 
