@@ -17,11 +17,18 @@ pip install dooly
 
 """
 @TODO(jinmang2) ~ 2월말
-- WSD Batch 처리
+- WSD Batch 처리 (Done)
 - NER test 코드 작성
-- NER 언어별 output check
+- NER 언어별 output check (Done)
 - NLI, Translation, MRC 포팅
-- 각 task별 class 상속도 다시 고려
+- 각 task별 class 상속도 다시 고려 (Done)
+"""
+
+"""
+Added TODO
+- tokenizer가 text_pair도 잘 처리하는지
+- truncation
+- summarization
 """
 
 ## Reference
