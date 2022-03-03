@@ -28,12 +28,12 @@ def invert_mask(attention_mask):
 class FSMTConfig(FSMTConfig):
     def __init__(
         self,
-        encoder_normalize_before=False,
-        decoder_normalize_before=False,
+        encoder_pre_layernorm=False,
+        decoder_pre_layernorm=False,
         **kwargs,
     ):
-        self.encoder_normalize_before = encoder_normalize_before
-        self.decoder_normalize_before = decoder_normalize_before
+        self.encoder_pre_layernorm = encoder_pre_layernorm
+        self.decoder_pre_layernorm = decoder_pre_layernorm
         super().__init__(**kwargs)
 
 
@@ -41,7 +41,7 @@ class FSMTEncoderLayer(EncoderLayer):
 
     def __init__(self, config: FSMTConfig):
         super().__init__(config)
-        self.normalize_before = config.encoder_normalize_before
+        self.pre_layernorm = config.encoder_pre_layernorm
 
     def forward(self, x, encoder_padding_mask, layer_head_mask, output_attentions=False):
         """
@@ -57,7 +57,7 @@ class FSMTEncoderLayer(EncoderLayer):
             encoded output of shape *(seq_len, batch, embed_dim)*
         """
         residual = x
-        if self.normalize_before:
+        if self.pre_layernorm:
             x = self.self_attn_layer_norm(x)
         x, attn_weights = self.self_attn(
             query=x,
@@ -68,18 +68,18 @@ class FSMTEncoderLayer(EncoderLayer):
         )
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
-        if not self.normalize_before:
+        if not self.pre_layernorm:
             x = self.self_attn_layer_norm(x)
 
         residual = x
-        if self.normalize_before:
+        if self.pre_layernorm:
             x = self.final_layer_norm(x)
         x = self.activation_fn(self.fc1(x))
         x = nn.functional.dropout(x, p=self.activation_dropout, training=self.training)
         x = self.fc2(x)
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
-        if not self.normalize_before:
+        if not self.pre_layernorm:
             x = self.final_layer_norm(x)
         return x, attn_weights
 
@@ -88,7 +88,7 @@ class FSMTDecoderLayer(DecoderLayer):
 
     def __init__(self, config: FSMTConfig):
         super().__init__(config)
-        self.normalize_before = config.decoder_normalize_before
+        self.pre_layernorm = config.decoder_pre_layernorm
 
     def forward(
         self,
@@ -107,7 +107,7 @@ class FSMTDecoderLayer(DecoderLayer):
         if layer_state is None:
             layer_state = {}
 
-        if self.normalize_before:
+        if self.pre_layernorm:
             x = self.self_attn_layer_norm(x)
         # Self Attention
         x, self_attn_weights = self.self_attn(
@@ -121,13 +121,13 @@ class FSMTDecoderLayer(DecoderLayer):
         )
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
-        if not self.normalize_before:
+        if not self.pre_layernorm:
             x = self.self_attn_layer_norm(x)
 
         # Cross attention
         residual = x
         assert self.encoder_attn.cache_key != self.self_attn.cache_key
-        if self.normalize_before:
+        if self.pre_layernorm:
             x = self.encoder_attn_layer_norm(x)
         x, cross_attn_weights = self.encoder_attn(
             query=x,
@@ -139,19 +139,19 @@ class FSMTDecoderLayer(DecoderLayer):
         )
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
-        if not self.normalize_before:
+        if not self.pre_layernorm:
             x = self.encoder_attn_layer_norm(x)
 
         # Fully Connected
         residual = x
-        if self.normalize_before:
+        if self.pre_layernorm:
             x = self.final_layer_norm(x)
         x = self.activation_fn(self.fc1(x))
         x = nn.functional.dropout(x, p=self.activation_dropout, training=self.training)
         x = self.fc2(x)
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
-        if not self.normalize_before:
+        if not self.pre_layernorm:
             x = self.final_layer_norm(x)
         return (
             x,
@@ -182,10 +182,9 @@ class FSMTEncoder(nn.Module):
         self.layers = nn.ModuleList(
             [FSMTEncoderLayer(config) for _ in range(config.encoder_layers)]
         )  # type: List[EncoderLayer]
-        if config.encoder_normalize_before:
+        self.pre_layernorm = config.encoder_pre_layernorm
+        if self.pre_layernorm:
             self.layer_norm = nn.LayerNorm(embed_dim)
-        else:
-            self.layer_norm = None
 
     def forward(
         self,
@@ -252,7 +251,7 @@ class FSMTEncoder(nn.Module):
             if output_attentions:
                 all_attentions = all_attentions + (attn,)
 
-        if self.layer_norm is not None:
+        if self.pre_layernorm:
             x = self.layer_norm(x)
 
         # T x B x C -> B x T x C
@@ -288,10 +287,9 @@ class FSMTDecoder(nn.Module):
         self.layers = nn.ModuleList(
             [FSMTDecoderLayer(config) for _ in range(config.decoder_layers)]
         )  # type: List[DecoderLayer]
-        if config.decoder_normalize_before:
+        self.pre_layernorm = config.decoder_pre_layernorm
+        if self.pre_layernorm:
             self.layer_norm = nn.LayerNorm(embed_dim)
-        else:
-            self.layer_norm = None
 
         if is_deepspeed_zero3_enabled():
             import deepspeed
@@ -406,7 +404,7 @@ class FSMTDecoder(nn.Module):
                 all_self_attns += (layer_self_attn,)
                 all_cross_attns += (layer_cross_attn,)
 
-        if self.layer_norm is not None:
+        if self.pre_layernorm:
             x = self.layer_norm(x)
 
         # add hidden states from the last decoder layer
