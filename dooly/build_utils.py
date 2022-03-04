@@ -5,12 +5,11 @@ import inspect
 import warnings
 from packaging import version
 from functools import partial
-from typing import Dict, Union, Optional, Tuple, List, TypeVar
+from typing import Dict, Union, Optional, Tuple, List
+
+import torch
 
 from transformers.file_utils import hf_bucket_url, cached_path
-
-
-Tokenizer = TypeVar("Tokenizer") # ../tokenizers/base.py
 
 
 HUB_NAME = "jinmang2/dooly-hub"
@@ -28,6 +27,9 @@ CONFIG_USER_AGENT = {"file_type": "config",
 MODEL_USER_AGENT = {"file_type": "model",
                     "framework": "pytorch",
                     "from_auto_class": False,}
+
+# @TODO: cuda:0, 1, 2
+DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def download_from_hf_hub(

@@ -1,27 +1,38 @@
 import pickle
+from dataclasses import dataclass
 from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any
 
 import torch
 
-from ...build_utils import download_from_hf_hub, HUB_NAME
+from ...build_utils import download_from_hf_hub, HUB_NAME, DEFAULT_DEVICE
 from ...tokenizers import Tokenizer, DoolyTokenizer
 from ...models import DoolyModel
 
 
+@dataclass
+class DoolyTaskConfig:
+    lang: str
+    n_model: str
+    device: str
+    misc_tuple: Tuple
+
+
 class DoolyTaskBase:
 
-    def __init__(self, lang, n_model, device):
-        self.lang = lang
-        self.n_model = n_model
-        self.device = device
+    def __init__(self, config: DoolyTaskConfig):
+        self.config = config
+
+        self._model = None
+        self._tokenizer = None
 
     def __repr__(self):
         task_info = f"[TASK]: {self.__class__.__name__}"
         # -1 is object, -2 is DoolyTaskBase.
         category = f"[CATEGORY]: {self.__class__.__mro__[-3].__name__}"
         lang_info = f"[LANG]: {self.lang}"
+        device_info = f"[DEVICE]: {self.device}"
         model_info = f"[MODEL]: {self.n_model}"
-        return "\n".join([task_info, category, lang_info, model_info])
+        return "\n".join([task_info, category, lang_info, device_info, model_info])
 
     def _prepare_inputs(
         self,
@@ -33,10 +44,28 @@ class DoolyTaskBase:
                 inputs[k] = v.to(self._model.device)
         return inputs
 
-    def set_device(self, device: str = None):
-        if device is not None:
-            self.device = device
+    def finalize(self):
         self._model.to(self.device)
+
+    @property
+    def lang(self):
+        return self.config.lang
+
+    @property
+    def n_model(self):
+        return self.config.n_model
+
+    @property
+    def device(self):
+        return self.config.device
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def tokenizer(self):
+        return self._tokenizer
 
     @classmethod
     def build(
@@ -50,7 +79,7 @@ class DoolyTaskBase:
         lang, n_model = cls._check_validate_input(lang, n_model)
 
         # parse device option from kwargs
-        device = kwargs.pop("device", "cpu")
+        device = kwargs.pop("device", DEFAULT_DEVICE)
 
         # parse download keyword arguments
         dl_kwargs = {}
@@ -67,14 +96,16 @@ class DoolyTaskBase:
         misc_files = cls.misc_files.get(lang, [])
         misc = cls.build_misc(lang, n_model, misc_files, **dl_kwargs)
 
-        return cls(lang, n_model, device, tokenizer, model, misc)
+        config = DoolyTaskConfig(lang=lang, n_model=n_model, device=device, misc_tuple=misc)
+
+        return cls(config, tokenizer, model)
 
     @staticmethod
-    def build_tokenizer(task, lang, n_model, **kwargs):
+    def build_tokenizer(task: str, lang: str, n_model: str, **kwargs):
         return DoolyTokenizer.build_tokenizer(task, lang, n_model, **kwargs)
 
     @staticmethod
-    def build_model(task, lang, n_model, **kwargs):
+    def build_model(task: str, lang: str, n_model: str, **kwargs):
         return DoolyModel.build_model(task, lang, n_model, **kwargs)
 
     @classmethod
@@ -94,15 +125,23 @@ class DoolyTaskBase:
     @classmethod
     def _check_validate_input(cls, lang: str, n_model: str) -> Tuple[str, str]:
         if lang is None:
-            lang = cls.available_langs[0]
+            lang = cls.get_default_lang()
         cls._check_available_lang(lang)
         if n_model is None:
-            n_model = cls.available_models[lang][0]
+            n_model = cls.get_default_model(lang)
         cls._check_available_model(lang, n_model)
         return lang, n_model
 
     @classmethod
-    def build_misc(cls, *args, **kwargs):
+    def get_default_lang(cls) -> str:
+        return cls.available_langs[0]
+
+    @classmethod
+    def get_default_model(cls, lang: str) -> str:
+        return cls.available_models[lang][0]
+
+    @classmethod
+    def build_misc(cls, *args, **kwargs) -> Tuple:
         return cls._build_misc(*args, **kwargs)
 
     @classmethod
@@ -137,8 +176,5 @@ class DoolyTaskBase:
                 misc += (open(resolved_file_path, "r", encoding="utf-8").read().strip().splitlines(),)
             else:
                 continue
-
-        if len(misc) == 1:
-            misc = misc[0]
 
         return misc

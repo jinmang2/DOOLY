@@ -1,7 +1,13 @@
 from typing import List, Dict, Tuple, Union
 from collections import namedtuple
 
-from .base import Seq2Seq
+from transformers import PreTrainedModel, PreTrainedTokenizerBase
+
+from .base import DoolyTaskConfig, Seq2Seq
+from ..tokenizers import Tokenizer as _Tokenizer
+
+
+Tokenizer = Union[_Tokenizer, PreTrainedTokenizerBase]
 
 
 class WordSenseDisambiguation(Seq2Seq):
@@ -30,20 +36,17 @@ class WordSenseDisambiguation(Seq2Seq):
 
     def __init__(
         self,
-        lang: str,
-        n_model: str,
-        device: str,
-        tokenizer,
-        model,
-        misc: Tuple,
+        config: DoolyTaskConfig,
+        tokenizer: Tokenizer,
+        model: PreTrainedModel,
     ):
-        super().__init__(lang=lang, n_model=n_model, device=device)
+        super().__init__(config=config)
         self._tokenizer = tokenizer
-        self._model = model.to(device)
+        self._model = model
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
-        self._morph2idx: Dict[str, int] = misc[0] # morpheme to index
-        self._tag2idx: Dict[str, int] = misc[1] # tag to index
-        query2origin, query2meaning, query2eng, _ = misc[2]
+        self._morph2idx: Dict[str, int] = config.misc_tuple[0] # morpheme to index
+        self._tag2idx: Dict[str, int] = config.misc_tuple[1] # tag to index
+        query2origin, query2meaning, query2eng, _ = config.misc_tuple[2]
         self._query2origin: Dict[str, str] = query2origin # query to origin
         self._query2meaning: Dict[str, str] = query2meaning # query to meaning
         self._query2eng: Dict[str, str] = query2eng # query to english
@@ -51,6 +54,7 @@ class WordSenseDisambiguation(Seq2Seq):
             typename="detail",
             field_names="morph pos sense_id original meaning english",
         )
+        self.finalize()
 
     def __call__(
         self,

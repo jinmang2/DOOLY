@@ -2,10 +2,14 @@ import re
 from typing import List, Dict, Tuple, Union
 from collections import defaultdict
 
-from .base import SequenceTagging
+from transformers import PreTrainedModel, PreTrainedTokenizerBase
+
+from .base import DoolyTaskConfig, SequenceTagging
+from ..tokenizers import Tokenizer as _Tokenizer
 
 
 SentenceWithTags = List[Tuple[str, str]]
+Tokenizer = Union[_Tokenizer, PreTrainedTokenizerBase]
 
 
 class NamedEntityRecognition(SequenceTagging):
@@ -50,27 +54,25 @@ class NamedEntityRecognition(SequenceTagging):
 
     def __init__(
         self,
-        lang: str,
-        n_model: str,
-        device: str,
-        tokenizer,
-        model,
-        wsd_dict: Dict = {},
+        config: DoolyTaskConfig,
+        tokenizer: Tokenizer,
+        model: PreTrainedModel,
     ):
-        super().__init__(lang=lang, n_model=n_model, device=device)
+        super().__init__(config=config)
 
         use_sentence_tokenizer = "charbert" in n_model
         if use_sentence_tokenizer:
             tokenizer._set_sent_tokenizer()
 
         self._tokenizer = tokenizer
-        self._model = model.to(device)
-        self._wsd_dict = wsd_dict
+        self._model = model
+        self._wsd_dict = config.misc_tuple[0] # wiki.ko.items
 
         self._wsd = None
         self._cls2cat = None
         self._quant2cat = None
         self._term2cat = None
+        self.finalize()
 
     def __call__(
         self,
@@ -165,7 +167,7 @@ class NamedEntityRecognition(SequenceTagging):
 
         if self._cls2cat is None:
             self._cls2cat = dict()
-            lines = self._build_misc(self.lang, self.n_model, ["wsd.cls.txt"])
+            lines = self._build_misc(self.lang, self.n_model, ["wsd.cls.txt"])[0]
             for line in lines:
                 morph, homonymno, category = line.split()
                 classifier = f"{morph}__NNB__{homonymno}"  # bound noun
@@ -174,7 +176,7 @@ class NamedEntityRecognition(SequenceTagging):
         if self._quant2cat is None:
             self._quant2cat = dict()
             self._term2cat = dict()
-            lines = self._build_misc(self.lang, self.n_model, ["re.templates.txt"])
+            lines = self._build_misc(self.lang, self.n_model, ["re.templates.txt"])[0]
             for line in lines:
                 category, ner_category, expression = line.split(" ", 2)
                 if ner_category == "QUANTITY":

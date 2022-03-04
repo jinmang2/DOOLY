@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from .tasks import (
@@ -15,17 +16,22 @@ add_task(["ner", "named_entity_recognition", "entity_recognition"], NamedEntityR
 add_task(["wsd", "word_sense_ambiguation"], WordSenseDisambiguation)
 
 
+def normalize_task(task: str):
+    return re.sub(" +", " ", task.lower()).replace(" ", "_")
+
+
 class Dooly:
     def __new__(
         cls,
         task: str,
         lang: str,
         n_model: Optional[str] = None,
-         **kwargs
+        **kwargs
      ):
-        hub_interface = DOOLY_HUB_CONTENTS.get(task, None)
-        if hub_interface is None:
+        task = normalize_task(task)
+        task_cls = DOOLY_HUB_CONTENTS.get(task, None)
+        if task_cls is None:
             raise KeyError (
-                f"Unavailable task name. See here {DOOLY_HUB_CONTENTS.keys()}"
+                f"Unavailable task name '{task}'. See here {DOOLY_HUB_CONTENTS.keys()}"
             )
-        return hub_interface.build(lang, n_model, **kwargs)
+        return task_cls.build(lang, n_model, **kwargs)
