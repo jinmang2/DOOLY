@@ -68,7 +68,7 @@ class ZeroShotClassification(NaturalLanguageInference):
         label2id = self._model.config.label2id
         contradiction_id = label2id.get(self.contra_label_name, None)
         entailment_id = label2id.get(self.entail_label_name, None)
-        assert contradiction_id is None or entailment_id is None
+        assert contradiction_id is not None or entailment_id is not None
         return [contradiction_id, entailment_id]
 
     def __call__(
