@@ -1,3 +1,4 @@
+import abc
 import pickle
 from dataclasses import dataclass
 from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any
@@ -21,9 +22,12 @@ class DoolyTaskBase:
 
     def __init__(self, config: DoolyTaskConfig):
         self.config = config
-
         self._model = None
         self._tokenizer = None
+
+    @abc.abstractmethod
+    def __call__(self, *args, **kwargs):
+        pass
 
     def __repr__(self):
         task_info = f"[TASK]: {self.__class__.__name__}"

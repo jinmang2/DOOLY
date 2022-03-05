@@ -1,12 +1,15 @@
 from typing import Union, List
 
+import torch
 import numpy as np
+from transformers import PreTrainedTokenizerBase
 
 from .base import DoolyTaskBase
 
 
 class SequenceTagging(DoolyTaskBase):
 
+    @torch.no_grad()
     def predict_tags(
         self,
         sentences: Union[List[str], str],
@@ -15,19 +18,26 @@ class SequenceTagging(DoolyTaskBase):
         do_sent_split: bool = True,
     ):
         # Tokenize
-        # Only support DoolyTokenizer subclass
-        tokens = self._tokenizer(
-            sentences,
-            return_tokens=True,
-            add_special_tokens=False
-        )
+        if not issubclass(self._tokenizer.__class__, PreTrainedTokenizerBase):
+            tokens = self._tokenizer(
+                sentences,
+                return_tokens=True,
+                add_special_tokens=False
+            )
+        else:
+            if hasattr(self._tokenizer, "segment"):
+                tokens = self._tokenizer.segment(sentences)
+            else:
+                tokens = self._tokenizer.tokenize(sentences, add_special_tokens=False)
         tokens = [tokens] if len(sentences) == 1 else tokens
-        inputs = self._tokenizer(
-            sentences,
-            return_tensors=True,
-            no_separator=no_separator,
+        # Get input_ids
+        params = dict(
+            return_tensors="pt",
             add_special_tokens=add_special_tokens,
         )
+        if not issubclass(self._tokenizer, PreTrainedTokenizerBase):
+            params.update(dict(no_separator=no_separator))
+        inputs = self._tokenizer(sentences, **params)
 
         # Predict tags and ignore <s> & </s> tokens
         inputs = self._prepare_inputs(inputs)

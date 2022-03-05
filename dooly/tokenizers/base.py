@@ -8,6 +8,7 @@ import torch
 
 SPACE_NORMALIZER = re.compile(r"\s+")
 
+InputTexts = Union[str, List[str]]
 TokenizedOutput = Union[List[str], List[List[str]]]
 EncodedOutput = Union[List[int], List[List[int]], torch.Tensor]
 PaddedOutput = Union[List[List[int]], torch.Tensor]
@@ -60,8 +61,8 @@ class _BaseTokenizer:
 
     def __call__(
         self,
-        text: Union[str, List[str]],
-        text_pair: Optional[Union[str, List[str]]] = None,
+        text: InputTexts,
+        text_pair: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
         return_tensors: Union[str, bool] = False,
@@ -130,8 +131,8 @@ class _BaseTokenizer:
 
     def encode(
         self,
-        text: Union[str, List[str]],
-        text_pair: Optional[Union[str, List[str]]] = None,
+        text: InputTexts,
+        text_pair: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
         return_tensors: Union[str, bool] = False,
@@ -298,8 +299,8 @@ class Tokenizer(_BaseTokenizer):
 
     def sent_tokenize(
         self,
-        texts: Union[str, List[str]],
-        langs: Optional[Union[str, List[str]]] = None,
+        texts: InputTexts,
+        langs: Optional[InputTexts] = None,
     ) -> List[List[str]]:
         if isinstance(texts, str):
             texts = [texts]

@@ -8,6 +8,7 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from .base import Tokenizer
 from .bpe import Gpt2BpeTokenizer, BpeJaZhTokenizer
 from .char import CharS1Tokenizer, CharS2Tokenizer
+from .tokenization_roberta import RobertaTokenizerFast
 from ..build_utils import (
     download_from_hf_hub,
     HUB_NAME,
@@ -23,6 +24,12 @@ DoolyTokenizerHub = {
         "ja": {"jaberta.base": BpeJaZhTokenizer},
         "zh": {"zhberta.base": BpeJaZhTokenizer},
     },
+    "nli": {
+        "ko": {"brainbert.base": RobertaTokenizerFast},
+        "en": {"roberta.base": Gpt2BpeTokenizer},
+        "ja": {"jaberta.base": BpeJaZhTokenizer},
+        "zh": {"zhberta.base": BpeJaZhTokenizer},
+    },
     "wsd": {
         "ko": {"transformer.large": CharS2Tokenizer},
     },
@@ -33,7 +40,7 @@ available_tasks = list(DoolyTokenizerHub.keys())
 class DoolyTokenizer:
 
     @classmethod
-    def build_tokenizer(cls, task: str, lang: str, n_model: str, **kwargs):
+    def build_tokenizer(cls, task: str, lang: str, n_model: Optional[str] = None, **kwargs):
         assert task in available_tasks, (
             f"Task `{task}` is not available. See here {available_tasks}."
         )
@@ -43,6 +50,8 @@ class DoolyTokenizer:
             f"See here {available_langs}."
         )
         available_models = available_langs[lang]
+        if n_model is None:
+            n_model = list(available_models.keys())[0]
         assert n_model in available_models, (
             f"Model `{n_model}` is not available in this task-lang pair. "
             f"See here {available_models}."

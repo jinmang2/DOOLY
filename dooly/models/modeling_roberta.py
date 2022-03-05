@@ -5,7 +5,8 @@ from transformers import (
     RobertaConfig,
     RobertaModel,
     RobertaPreTrainedModel,
-    RobertaForQuestionAnswering
+    RobertaForQuestionAnswering,
+    RobertaForSequenceClassification,
 )
 
 from .modeling_heads import SpanPredictionHead, ClassificationHead

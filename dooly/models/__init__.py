@@ -9,7 +9,11 @@ from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
 
 from .modeling_fsmt import FSMTConfig, FSMTForConditionalGeneration
-from .modeling_roberta import RobertaConfig, RobertaForSequenceTagging
+from .modeling_roberta import (
+    RobertaConfig,
+    RobertaForSequenceTagging,
+    RobertaForSequenceClassification,
+)
 from ..build_utils import (
     download_from_hf_hub,
     CONFIG_USER_AGENT,
@@ -26,6 +30,12 @@ DoolyModelHub = {
         "en": {"roberta.base": RobertaForSequenceTagging},
         "ja": {"jaberta.base": RobertaForSequenceTagging},
         "zh": {"zhberta.base": RobertaForSequenceTagging},
+    },
+    "nli": {
+        "ko": {"brainbert.base": RobertaForSequenceClassification},
+        "en": {"roberta.base": RobertaForSequenceClassification},
+        "ja": {"jaberta.base": RobertaForSequenceClassification},
+        "zh": {"zhberta.base": RobertaForSequenceClassification},
     },
     "wsd": {
         "ko": {"transformer.large": FSMTForConditionalGeneration}

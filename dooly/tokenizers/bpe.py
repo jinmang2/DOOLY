@@ -213,12 +213,11 @@ class BpeJaZhTokenizer(Tokenizer):
                 raise ImportError(
                     "Please install fugashi with: `pip install fugashi`")
             from transformers import BertJapaneseTokenizer
-            self._bpe = BertJapaneseTokenizer.from_pretrained(
-                "cl-tohoku/bert-base-japanese-whole-word-masking")
+            model_name_or_path = "cl-tohoku/bert-base-japanese-whole-word-masking"
+            self._bpe = BertJapaneseTokenizer.from_pretrained(model_name_or_path)
         elif lang == "zh":
             from transformers import BertTokenizer
-            self._bpe = BertTokenizer.from_pretrained(
-                "bert-base-chinese", do_lower_case=True)
+            self._bpe = BertTokenizer.from_pretrained("bert-base-chinese", do_lower_case=True)
 
     def _tokenize(self, text: str) -> List[str]:
         return self._bpe.tokenize(text)

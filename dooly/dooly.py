@@ -2,18 +2,20 @@ import re
 from typing import Optional
 
 from .tasks import (
-    NamedEntityRecognition,
-    WordSenseDisambiguation,
+    NamedEntityRecognition as NER,
+    NaturalLanguageInference as NLI,
+    WordSenseDisambiguation as WSD,
 )
 
+
+DOOLY_HUB_CONTENTS = {}
 
 def add_task(names, task):
     DOOLY_HUB_CONTENTS.update(dict.fromkeys(names, task))
 
-
-DOOLY_HUB_CONTENTS = {}
-add_task(["ner", "named_entity_recognition", "entity_recognition"], NamedEntityRecognition)
-add_task(["wsd", "word_sense_ambiguation"], WordSenseDisambiguation)
+add_task(["ner", "named_entity_recognition", "entity_recognition"], NER)
+add_task(["nli", "natural_language_inference"], NLI)
+add_task(["wsd", "word_sense_ambiguation"], WSD)
 
 
 def normalize_task(task: str):
