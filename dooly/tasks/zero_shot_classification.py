@@ -33,6 +33,11 @@ class ZeroShotClassification(NaturalLanguageInference):
 
     """
 
+    def finalize(self): # overrides
+        self._model.to(self.device)
+        self._contra_label_name = "contradiction"
+        self._entail_label_name = "entailment"
+
     @property
     def _templates(self) -> Dict[str, str]:
         return {
@@ -43,9 +48,27 @@ class ZeroShotClassification(NaturalLanguageInference):
         }
 
     @property
+    def contra_label_name(self):
+        return self._contra_label_name
+
+    @contra_label_name.setter
+    def contra_label_name(self, name: str):
+        self._contra_label_name = name
+
+    @property
+    def entail_label_name(self):
+        return self._entail_label_name
+
+    @entail_label_name.setter
+    def entail_label_name(self, name: str):
+        self._entail_label_name = name
+
+    @property
     def not_neutral_label_ids(self) -> List[str]:
-        contradiction_id = self._model.config.label2id["contradiction"]
-        entailment_id = self._model.config.label2id["entailment"]
+        label2id = self._model.config.label2id
+        contradiction_id = label2id.get(self.contra_label_name, None)
+        entailment_id = label2id.get(self.entail_label_name, None)
+        assert contradiction_id is None or entailment_id is None
         return [contradiction_id, entailment_id]
 
     def __call__(
