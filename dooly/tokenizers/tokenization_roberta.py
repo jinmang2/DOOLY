@@ -6,6 +6,9 @@ from .base import InputTexts, TokenizedOutput
 
 
 def convert_vocab_from_fairseq_to_hf(vocab_path):
+    # fairseq의 Dictionary 객체가 vocab을 바꿔주는 방식
+    # Dictionary(...).indices로 접근하면 아래 과정을 거칠 필요가 없음
+    # 원본 vocab.json을 처리하는 방법
     import json
     with open(vocab_path, "r", encoding="utf-8") as f:
         vocab = json.load(f)
@@ -17,7 +20,7 @@ def convert_vocab_from_fairseq_to_hf(vocab_path):
             new_vocab[v] = 2
         elif v == "<unk>":
             new_vocab[v] = 3
-        else:
+        elif v not in ["<pad>", "<mask>"]:
             new_vocab[v] = i + 1
     with open(vocab_path, "w", encoding="utf-8") as f:
         json.dump(new_vocab, f, ensure_ascii=False)
@@ -39,7 +42,7 @@ def build_custom_roberta_tokenizer(
         fuse_unk=True,
     )
     # @TODO: Unigram
-    _tokenizer = tokenizers.Tokenzizer(bpe_obj)
+    _tokenizer = tokenizers.Tokenizer(bpe_obj)
     _tokenizer.normalizer = tokenizers.normalizers.NFKC()
     _tokenizer.pre_tokenizer = tokenizers.pre_tokenizers.Metaspace(
         replacement=replacement,
@@ -51,7 +54,7 @@ def build_custom_roberta_tokenizer(
         add_prefix_space=False,
     )
     _tokenizer.decoder = tokenizers.decoders.Metaspace(
-        replacemment=replacement,
+        replacement=replacement,
         add_prefix_space=add_prefix_space,
     )
 
@@ -73,11 +76,11 @@ class RobertaTokenizerFast(_RobertaTokenizerFast):
             add_special_tokens=False,
         )
         results = []
-        for encoding in encodings:
-            results.append(self._unk_to_raw_text(encoding))
+        for text, encoding in zip(texts, encodings):
+            results.append(text, self._unk_to_raw_text(encoding))
         return results
 
-    def _unk_to_raw_text(self, encoding: Encoding) -> List[str]:
+    def _unk_to_raw_text(self, text: str, encoding: Encoding) -> List[str]:
         offsets = encoding.offsets
         tokens = encoding.tokens
         result = []
