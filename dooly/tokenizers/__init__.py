@@ -20,7 +20,7 @@ from ..build_utils import (
 DoolyTokenizerHub = {
     "mrc": {
         "ko": {"brainbert.base": RobertaTokenizerFast},
-    }
+    },
     "ner": {
         "ko": {"charbert.base": CharS1Tokenizer},
         "en": {"roberta.base": Gpt2BpeTokenizer},
@@ -37,6 +37,7 @@ DoolyTokenizerHub = {
         "ko": {"transformer.large": CharS2Tokenizer},
     },
 }
+DoolyTokenizerHub["zero_topic"] = DoolyTokenizerHub["nli"]
 available_tasks = list(DoolyTokenizerHub.keys())
 
 

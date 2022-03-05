@@ -5,6 +5,7 @@ from .tasks import (
     NamedEntityRecognition as NER,
     NaturalLanguageInference as NLI,
     WordSenseDisambiguation as WSD,
+    ZeroShotClassification as ZT,
 )
 
 
@@ -16,6 +17,7 @@ def add_task(names, task):
 add_task(["ner", "named_entity_recognition", "entity_recognition"], NER)
 add_task(["nli", "natural_language_inference"], NLI)
 add_task(["wsd", "word_sense_ambiguation"], WSD)
+add_task(["zero_topic", "zt", "zsl", "zero_topic_classification", "zero_shot_classification"], ZT)
 
 
 def normalize_task(task: str):
