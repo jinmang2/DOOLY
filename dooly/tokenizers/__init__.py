@@ -18,6 +18,9 @@ from ..build_utils import (
 
 
 DoolyTokenizerHub = {
+    "mrc": {
+        "ko": {"brainbert.base": RobertaTokenizerFast},
+    }
     "ner": {
         "ko": {"charbert.base": CharS1Tokenizer},
         "en": {"roberta.base": Gpt2BpeTokenizer},
@@ -59,7 +62,6 @@ class DoolyTokenizer:
 
         tokenizer_class = available_models[n_model]
 
-        # return BuildMixin._build_tokenizer(task, lang, n_model, tokenizer_class, **kwargs)
         return cls._build_tokenizer(task, lang, n_model, tokenizer_class, **kwargs)
 
     @classmethod
