@@ -64,7 +64,7 @@ class WordSenseDisambiguation(Seq2Seq):
         add_special_tokens: bool = True,
         no_separator: bool = False,
         beams: int = 5,
-        max_len_a: int = 1,
+        max_len_a: int = 4,
         max_len_b: int = 50,
         temperature: float = 1.0,
         top_k: Optional[int] = None,
