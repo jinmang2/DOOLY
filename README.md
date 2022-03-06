@@ -1,35 +1,36 @@
 # DOOLY
-배치화를 지원하는 pororo의 친구 둘리!  huggingface로 모든 것을 처리합니다.
+PORORO의 아래 단점 세 가지를 개선한 라이브러리입니다.
+- 일부 task의 batch화 불가능
+- 내부 tokenize 과정 및 모듈 구조 확인이 어려움
+- fairseq dependency
 
-때문에 fairseq 등 복잡한 dependency없이 쉬운 사용이 가능해집니다.
+아래의 PORORO에서 지원하지 않는 task도 모델 학습 후 배포할 예정입니다.
+- information retrieval
+- dialogue state tracking
 
-windows 환경에서 사용도 가능합니다.
+## How to use?
+- install
+    - pip install도 가능하게 할 예정입니다
+    - task 10개 이상 추가되면 tag 배포하겠습니다.
+```
+$ git clone https://github.com/jinmang2/DOOLY.git
+$ cd DOOLY
+```
 
-- How to install?
+- how to use
+    - PORORO와 동일하게 사용할 수 있습니다.
+```python
+from dooly import Dooly
 
-```console
-pip install dooly
+ner = Dooly(task="ner", lang="ko")
 ```
 
 ## Support Tasks (22.02.18)
+- Machine Reading Comprehension
 - Named Entity Recognition
+- Natural Language Inference
 - Word Sense Disambiguation
-
-"""
-@TODO(jinmang2) ~ 2월말
-- WSD Batch 처리 (Done)
-- NER test 코드 작성
-- NER 언어별 output check (Done)
-- NLI, Translation, MRC 포팅
-- 각 task별 class 상속도 다시 고려 (Done)
-"""
-
-"""
-Added TODO
-- tokenizer가 text_pair도 잘 처리하는지
-- truncation
-- summarization
-"""
+- Zero Shot Topic Classification
 
 ## Reference
 - https://github.com/kakaobrain/pororo
