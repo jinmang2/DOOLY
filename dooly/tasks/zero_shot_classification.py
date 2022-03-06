@@ -106,10 +106,7 @@ class ZeroShotClassification(NaturalLanguageInference):
 
         all_probs = (all_probs * 100).round(2)
 
-        results = [
-            dict(zip(labels, prob))
-            for prob in all_probs.tolist()
-        ]
+        results = [dict(zip(labels, prob)) for prob in all_probs.tolist()]
 
         if batch_size == 1:
             results = results[0]

@@ -107,7 +107,6 @@ class NamedEntityRecognition(SequenceTagging):
             sentences=sentences,
             add_special_tokens=add_special_tokens,
             no_separator=no_separator,
-            do_sent_split=do_sent_split,
         )
 
         # Post processing
