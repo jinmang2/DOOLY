@@ -9,6 +9,12 @@ PORORO의 아래 단점 세 가지를 개선한 라이브러리입니다.
 - dialogue state tracking
 
 ## How to use?
+- requirements
+    - `mecab`, `fugashi`, `ipadic`
+```
+$ pip install transformers torch tokenizers dataclasses numpy
+```
+
 - install
     - pip install도 가능하게 할 예정입니다
     - task 10개 이상 추가되면 tag 배포하겠습니다.
