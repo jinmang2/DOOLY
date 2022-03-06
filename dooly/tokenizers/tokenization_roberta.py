@@ -2,7 +2,7 @@ from typing import List, Union, Optional
 from tokenizers import Encoding
 from transformers import RobertaTokenizerFast as _RobertaTokenizerFast
 
-from .base import InputTexts, TokenizedOutput
+from .base import InputTexts, TokenizedOutput, SentTokenizeMixin
 
 
 def convert_vocab_from_fairseq_to_hf(vocab_path):
@@ -68,10 +68,10 @@ def build_custom_roberta_tokenizer(
 # To match the class name to avoid warning statements
 # when `config_tokenizer_class` is not None.
 # See here: https://github.com/huggingface/transformers/blob/133c5e40c4c34b54180f1f0f48791bece45f4418/src/transformers/tokenization_utils_base.py#L1825
-class RobertaTokenizerFast(_RobertaTokenizerFast):
+class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
 
     def segment(self, texts: InputTexts) -> TokenizedOutput:
-        encodings = self._tokenizer.encode_batch(
+        encodings = self.backend_tokenizer.encode_batch(
             texts,
             add_special_tokens=False,
         )

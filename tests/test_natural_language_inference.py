@@ -4,10 +4,10 @@ def convert_fairseq_to_hf_transformers(nli):
 
     config = RobertaConfig(
         vocab_size=sent_encoder.embed_tokens.num_embeddings,
-        hidden_size=nli_ko._model.args.encoder_embed_dim,
-        num_hidden_layers=nli_ko._model.args.encoder_layers,
-        num_attention_heads=nli_ko._model.args.encoder_attention_heads,
-        intermediate_size=nli_ko._model.args.encoder_ffn_embed_dim,
+        hidden_size=nli._model.args.encoder_embed_dim,
+        num_hidden_layers=nli._model.args.encoder_layers,
+        num_attention_heads=nli._model.args.encoder_attention_heads,
+        intermediate_size=nli._model.args.encoder_ffn_embed_dim,
         max_position_embeddings=514,
         type_vocab_size=1,
         layer_norm_eps=1e-5,  # PyTorch default used in fairseq

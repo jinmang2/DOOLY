@@ -39,6 +39,9 @@ class _BaseTokenizer:
         self.padding_side = padding_side
         self.max_seq_length = max_seq_length
 
+        self._langtok_style = "basic"
+        self.sub_tokenizer = {}
+
     @property
     def cls_token_id(self) -> int:
         return self.vocab[self.cls_token]
@@ -59,10 +62,35 @@ class _BaseTokenizer:
     def nspecial(self) -> int:
         return 4 # cls, sep, pad, unk
 
+    @property
+    def langtok_style(self):
+        return self._langtok_style
+
+    @langtok_style.setter
+    def langtok_style(self, val: str):
+        self._langtok_style = val
+
+    def _langtok(self, lang: str):
+        # https://github.com/pytorch/fairseq/blob/master/fairseq/data/multilingual/multilingual_utils.py#L34
+        langtok = ""
+        if self.langtok_style == "basic":
+            langtok = f"[{lang.upper()}]"
+        elif self.langtok_style == "mbart":
+            mapping = {"en": "_XX", "ja": "_XX", "ko": "_KR", "zh": "_CN"}
+            langtok = f"[{lang + mapping[lang]}]"
+        elif self.langtok_style == "multilingual":
+            langtok = f"__{lang}__"
+        return langtok
+
+    def _set_sub_tokenizer(self, lang: str, tokenizer_object):
+        self.sub_tokenizer[lang] = tokenizer_object
+
     def __call__(
         self,
         text: InputTexts,
         text_pair: Optional[InputTexts] = None,
+        src_lang: Optional[InputTexts] = None,
+        tgt_lang: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
         return_tensors: Union[str, bool] = False,
@@ -73,6 +101,8 @@ class _BaseTokenizer:
         return self.encode(
             text=text,
             text_pair=text_pair,
+            src_lang=src_lang,
+            tgt_lang=tgt_lang,
             padding=padding,
             return_tokens=return_tokens,
             return_tensors=return_tensors,
@@ -99,9 +129,14 @@ class _BaseTokenizer:
         self,
         text: str,
         text_pair: Optional[str] = None,
+        src_lang: Optional[str] = None,
+        tgt_lang: Optional[str] = None,
         add_special_tokens: bool = False,
         no_separator: bool = False,
     ) -> List[str]:
+        """
+        If you want to use `src_lang` and `tgt_lang` parameters, plz overrides!
+        """
         tokenized = self._tokenize(text)
 
         if add_special_tokens:
@@ -133,6 +168,8 @@ class _BaseTokenizer:
         self,
         text: InputTexts,
         text_pair: Optional[InputTexts] = None,
+        src_lang: Optional[InputTexts] = None,
+        tgt_lang: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
         return_tensors: Union[str, bool] = False,
@@ -147,10 +184,15 @@ class _BaseTokenizer:
 
         assert text_pair is None or type(text) == type(text_pair)
 
+        if (src_lang is None) ^ (tgt_lang is None):
+            src_lang = tgt_lang = None
+
         if isinstance(text, str):
             return self.encode(
                 text=[text],
                 text_pair=[text_pair],
+                src_lang=[src_lang],
+                tgt_lang=[tgt_lang],
                 padding=padding,
                 return_tokens=return_tokens,
                 return_tensors=return_tensors,
@@ -161,16 +203,32 @@ class _BaseTokenizer:
 
         if text_pair is None:
             text_pair = [None] * len(text)
+        if src_lang is None:
+            src_lang = [None] * len(text)
+        if tgt_lang is None:
+            tgt_lang = [None] * len(text)
 
         assert len(text) == len(text_pair)
+        assert len(src_lang) == len(tgt_lang)
+
+        if len(src_lang) == 1:
+            src_lang = src_lang * len(text)
+            tgt_lang = tgt_lang * len(text)
+
+        assert len(text) == len(src_lang)
 
         texts, text_pairs = text, text_pair
+        src_langs, tgt_langs = src_lang, tgt_lang
         input_ids = []
 
-        for text, text_pair in zip(texts, text_pairs):
+        for text, text_pair, src_lang, tgt_lang in zip(
+            texts, text_pairs, src_langs, tgt_langs
+        ):
             tokenized = self.tokenize(
                 text=text,
                 text_pair=text_pair,
+                src_lang=src_lang,
+                tgt_lang=tgt_lang,
                 no_separator=no_separator,
                 add_special_tokens=add_special_tokens,
             )
@@ -217,6 +275,7 @@ class _BaseTokenizer:
         self,
         ids: EncodedOutput,
         ignore_symbols: List[int] = [],
+        recover_original: bool = True,
     ) -> DecodedOutput:
 
         if isinstance(ids, torch.Tensor):
@@ -226,6 +285,7 @@ class _BaseTokenizer:
             return self.decode(
                 ids=[ids],
                 ignore_symbols=ignore_symbols,
+                recover_original=recover_original,
             )
 
         ignore_symbols = set(None or ignore_symbols)
@@ -236,7 +296,8 @@ class _BaseTokenizer:
         decoded_texts = []
         for ids in list_of_ids:
             decoded = self.decode_line(ids, ignore_symbols)
-            decoded = self._recover_original(decoded)
+            if recover_original:
+                decoded = self._recover_original(decoded)
             decoded_texts.append(decoded)
 
         if len(decoded_texts) == 1:
@@ -286,8 +347,7 @@ class _BaseTokenizer:
         return padded
 
 
-class Tokenizer(_BaseTokenizer):
-    """ Whitespace Base Tokenizer with sentence tokenizer """
+class SentTokenizeMixin:
 
     def _set_sent_tokenizer(self):
         if self.lang in ["ko", "multi"]:
@@ -348,3 +408,8 @@ class Tokenizer(_BaseTokenizer):
                     sentences.append(sents)
         num_sentences = [len(sents) for sents in sentences]
         return sentences, num_sentences
+
+
+class Tokenizer(_BaseTokenizer, SentTokenizeMixin):
+    """ Whitespace Base Tokenizer with sentence tokenizer """
+    pass

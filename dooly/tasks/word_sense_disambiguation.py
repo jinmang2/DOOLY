@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, Optional
 from collections import namedtuple
 
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
@@ -8,6 +8,10 @@ from ..tokenizers import Tokenizer as _Tokenizer
 
 
 Tokenizer = Union[_Tokenizer, PreTrainedTokenizerBase]
+Wdetail = namedtuple(
+    typename="detail",
+    field_names="morph pos sense_id original meaning english",
+)
 
 
 class WordSenseDisambiguation(Seq2Seq):
@@ -46,14 +50,12 @@ class WordSenseDisambiguation(Seq2Seq):
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
         self._morph2idx: Dict[str, int] = config.misc_tuple[0] # morpheme to index
         self._tag2idx: Dict[str, int] = config.misc_tuple[1] # tag to index
+
         query2origin, query2meaning, query2eng, _ = config.misc_tuple[2]
         self._query2origin: Dict[str, str] = query2origin # query to origin
         self._query2meaning: Dict[str, str] = query2meaning # query to meaning
         self._query2eng: Dict[str, str] = query2eng # query to english
-        self._Wdetail = namedtuple(
-            typename="detail",
-            field_names="morph pos sense_id original meaning english",
-        )
+
         self.finalize()
 
     def __call__(
@@ -62,36 +64,44 @@ class WordSenseDisambiguation(Seq2Seq):
         add_special_tokens: bool = True,
         no_separator: bool = False,
         beams: int = 5,
-        max_len_a: int = 4,
+        max_len_a: int = 1,
         max_len_b: int = 50,
+        temperature: float = 1.0,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
+        no_repeat_ngram_size: int = 0,
+        length_penalty: float = 1.0,
+        **kwargs,
     ):
         if isinstance(sentences, str):
             sentences = [sentences]
 
-        inputs = self._tokenizer(
+        generated = self.generate(
             sentences,
-            return_tensors=True,
-            no_separator=no_separator,
             add_special_tokens=add_special_tokens,
+            no_separator=no_separator,
+            beams=beams,
+            max_len_a=max_len_a,
+            max_len_b=max_len_b,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+            length_penalty=length_penalty,
+            **kwargs,
         )
-        input_ids = self._prepare_inputs(inputs)["input_ids"]
 
-        # beam search
-        # @TODO: fix miss-match fairseq vs transformers
-        outputs = self._model.generate(
-            input_ids,
-            num_beams=beams,
-            max_length=input_ids.shape[-1] * max_len_a + max_len_b,
-        )
+        results = []
+        for output in generated:
+            decoded_text = self.tokenizer.decode(output, recover_original=False)
+            results.append(self._postprocess(decoded_text))
 
-        result = []
-        for output in outputs:
-            decoded_text = self._tokenizer.decode(output)
-            result.append(self._postprocess(decoded_text))
+        if len(results) == 1:
+            results = results[0]
 
-        return result
+        return results
 
-    def _postprocess(self, output):
+    def _postprocess(self, output: str) -> List[Wdetail]:
         eojeols = output.split("▁")
 
         result = []
@@ -109,7 +119,7 @@ class WordSenseDisambiguation(Seq2Seq):
                 morph = "".join([c for c in morph if c != " "])
 
                 if tag not in self._cands:
-                    wdetail = self._Wdetail(morph, tag, None, None, None, None)
+                    wdetail = Wdetail(morph, tag, None, None, None, None)
                     result.append(wdetail)
                     continue
 
@@ -129,11 +139,11 @@ class WordSenseDisambiguation(Seq2Seq):
                     if meaning:
                         sense = "00"
 
-                wdetail = self._Wdetail(morph, tag, sense, origin, meaning, eng)
+                wdetail = Wdetail(morph, tag, sense, origin, meaning, eng)
                 result.append(wdetail)
 
             if i != len(eojeols) - 1:
-                wdetail = self._Wdetail("▁", "SPACE", None, None, None, None)
+                wdetail = Wdetail("▁", "SPACE", None, None, None, None)
                 result.append(wdetail)
 
         return result
