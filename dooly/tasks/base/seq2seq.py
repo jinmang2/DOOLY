@@ -37,9 +37,14 @@ class Seq2Seq(DoolyTaskBase):
 
         do_sample = False
         if top_k or top_p:
-            assert isinstance(top_k, int) and top_k > 0
             assert isinstance(top_p, float) and 0 <= top_p <= 1
             do_sample = True
+
+            if top_k is not None:
+                assert isinstance(top_k, int) and top_k > 0
+
+            if top_p is not None:
+                assert isinstance(top_p, float) and 0 <= top_p <= 1
 
         # Do not support beam_sample
         if do_sample and beams > 1:
