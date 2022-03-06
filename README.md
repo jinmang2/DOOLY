@@ -25,7 +25,7 @@ from dooly import Dooly
 ner = Dooly(task="ner", lang="ko")
 ```
 
-## Support Tasks (22.02.18)
+## Support Tasks
 - Machine Reading Comprehension
 - Named Entity Recognition
 - Natural Language Inference
