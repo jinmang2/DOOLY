@@ -185,7 +185,8 @@ class MachineReadingComprehension(SequenceTagging):
 
         return all_nbest
 
-    def _postprocess(self, tagger, text: str) -> str:
+    @staticmethod
+    def _postprocess(tagger, text: str) -> str:
         assert hasattr(tagger, "pos")
         # First, strip punctuations
         text = text.strip("""!"\#$&'()*+,\-./:;<=>?@\^_‘{|}~《》""")

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any
 
 import torch
+from transformers import PreTrainedTokenizerBase
 
 from ...build_utils import download_from_hf_hub, HUB_NAME, DEFAULT_DEVICE
 from ...tokenizers import Tokenizer, DoolyTokenizer
@@ -30,9 +31,89 @@ class DoolyTaskBase:
     def __call__(self, *args, **kwargs):
         pass
 
-    @abc.abstractmethod
-    def _preprocess(self, *args, **kwargs):
-        pass
+    def _preprocess(
+        self,
+        text: Union[List[str], str],
+        text_pair: Union[List[str], str] = None,
+        src_lang: Union[List[str], str] = None,
+        tgt_lang: Union[List[str], str] = None,
+        add_special_tokens: bool = True,
+        no_separator: bool = False,
+        return_tokens: bool = False,
+    ):
+        inputs = self.get_inputs(
+            text=text,
+            text_pair=text_pair,
+            src_lang=src_lang,
+            tgt_lang=tgt_lang,
+            add_special_tokens=add_special_tokens,
+            no_separator=no_separator,
+        )
+
+        outputs = (inputs,)
+        if return_tokens:
+            tokens = self.get_tokens(
+                text=text,
+                text_pair=text_pair,
+                src_lang=src_lang,
+                tgt_lang=tgt_lang,
+                add_special_tokens=add_special_tokens,
+                no_separator=no_separator,
+            )
+            outputs += (tokens,)
+
+        return outputs
+
+    def get_tokens(
+        self,
+        text: Union[List[str], str],
+        text_pair: Union[List[str], str] = None,
+        src_lang: Union[List[str], str] = None,
+        tgt_lang: Union[List[str], str] = None,
+        add_special_tokens: bool = True,
+        no_separator: bool = False,
+    ):
+        if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
+            tokens = self.tokenizer(
+                text,
+                text_pair,
+                src_lang=src_lang,
+                tgt_lang=tgt_lang,
+                return_tokens=True,
+                add_special_tokens=False
+            )
+        else:
+            # src_lang and tgt_lang must to be None
+            if hasattr(self.tokenizer, "segment"):
+                tokens = self.tokenizer.segment(text, text_pair)
+            else:
+                tokens = self.tokenizer.tokenize(text, text_pair, add_special_tokens=False)
+        tokens = [tokens] if len(text) == 1 else tokens
+        return tokens
+
+    def get_inputs(
+        self,
+        text: Union[List[str], str],
+        text_pair: Union[List[str], str] = None,
+        src_lang: Union[List[str], str] = None,
+        tgt_lang: Union[List[str], str] = None,
+        add_special_tokens: bool = True,
+        no_separator: bool = False,
+    ):
+        params = dict(
+            return_tensors="pt",
+            add_special_tokens=add_special_tokens,
+        )
+        if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
+            params.update(
+                {
+                    "src_lang": src_lang,
+                    "tgt_lang": tgt_lang,    
+                    "no_separator": no_separator,
+                }
+            )
+        inputs = self.tokenizer(text, text_pair, **params)
+        return inputs
 
     def __repr__(self):
         task_info = f"[TASK]: {self.__class__.__name__}"
