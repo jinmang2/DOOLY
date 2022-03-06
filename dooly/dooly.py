@@ -2,6 +2,7 @@ import re
 from typing import Optional
 
 from .tasks import (
+    MachineReadingComprehension as MRC,
     NamedEntityRecognition as NER,
     NaturalLanguageInference as NLI,
     WordSenseDisambiguation as WSD,
@@ -9,11 +10,12 @@ from .tasks import (
 )
 
 
-DOOLY_HUB_CONTENTS = {}
-
 def add_task(names, task):
     DOOLY_HUB_CONTENTS.update(dict.fromkeys(names, task))
 
+
+DOOLY_HUB_CONTENTS = {}
+add_task(["mrc", "machine_reading_comprehension", "reading_comprehension"], MRC)
 add_task(["ner", "named_entity_recognition", "entity_recognition"], NER)
 add_task(["nli", "natural_language_inference"], NLI)
 add_task(["wsd", "word_sense_ambiguation"], WSD)
@@ -21,7 +23,9 @@ add_task(["zero_topic", "zt", "zsl", "zero_topic_classification", "zero_shot_cla
 
 
 def normalize_task(task: str):
-    return re.sub(" +", " ", task.lower()).replace(" ", "_")
+    task = re.sub(" +", " ", task.lower())
+    task = task.replace("-", "_").replace(" ", "_")
+    return task
 
 
 class Dooly:

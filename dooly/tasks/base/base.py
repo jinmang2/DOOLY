@@ -1,5 +1,6 @@
 import abc
 import pickle
+import inspect
 from dataclasses import dataclass
 from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any
 
@@ -29,6 +30,10 @@ class DoolyTaskBase:
     def __call__(self, *args, **kwargs):
         pass
 
+    @abc.abstractmethod
+    def _preprocess(self, *args, **kwargs):
+        pass
+
     def __repr__(self):
         task_info = f"[TASK]: {self.__class__.__name__}"
         # -1 is object, -2 is DoolyTaskBase.
@@ -47,6 +52,17 @@ class DoolyTaskBase:
             if isinstance(v, torch.Tensor):
                 inputs[k] = v.to(self._model.device)
         return inputs
+
+    def _remove_unused_columns(
+        self,
+        inputs: Dict[str, Union[torch.Tensor, Any]],
+    ) -> Dict[str, Union[torch.Tensor, Any]]:
+        signature = inspect.signature(self.model.forward)
+        new_inputs = {}
+        for k, v in inputs.items():
+            if k in signature.parameters:
+                new_inputs[k] = v
+        return new_inputs
 
     def finalize(self):
         self._model.to(self.device)
