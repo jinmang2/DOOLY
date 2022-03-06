@@ -21,6 +21,12 @@ DoolyTokenizerHub = {
     "mrc": {
         "ko": {"brainbert.base": RobertaTokenizerFast},
     },
+    "mt": {
+        "multi": {
+            "transformer.large.mtpg": CharS2Tokenizer,
+            "transformer.large.fast.mtpg": CharS2Tokenizer
+        },
+    },
     "ner": {
         "ko": {"charbert.base": CharS1Tokenizer},
         "en": {"roberta.base": Gpt2BpeTokenizer},

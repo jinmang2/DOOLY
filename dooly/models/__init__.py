@@ -29,6 +29,12 @@ DoolyModelHub = {
     "mrc": {
         "ko": {"brainbert.base": RobertaForSpanPrediction},
     },
+    "mt": {
+        "multi": {
+            "transformer.large.mtpg": FSMTForConditionalGeneration,
+            "transformer.large.fast.mtpg": FSMTForConditionalGeneration,
+        },
+    },
     "ner": {
         "ko": {"charbert.base": RobertaForSequenceTagging},
         "en": {"roberta.base": RobertaForSequenceTagging},

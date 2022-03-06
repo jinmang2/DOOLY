@@ -3,6 +3,7 @@ from typing import Optional
 
 from .tasks import (
     MachineReadingComprehension as MRC,
+    MachineTranslation as MT,
     NamedEntityRecognition as NER,
     NaturalLanguageInference as NLI,
     WordSenseDisambiguation as WSD,
@@ -16,6 +17,7 @@ def add_task(names, task):
 
 DOOLY_HUB_CONTENTS = {}
 add_task(["mrc", "machine_reading_comprehension", "reading_comprehension"], MRC)
+add_task(["mt", "nmt", "translation", "machine_translation", "neural_machine_translation"], MT)
 add_task(["ner", "named_entity_recognition", "entity_recognition"], NER)
 add_task(["nli", "natural_language_inference"], NLI)
 add_task(["wsd", "word_sense_ambiguation"], WSD)

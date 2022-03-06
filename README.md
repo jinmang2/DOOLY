@@ -33,6 +33,7 @@ ner = Dooly(task="ner", lang="ko")
 
 ## Support Tasks
 - Machine Reading Comprehension
+- Machine Translation
 - Named Entity Recognition
 - Natural Language Inference
 - Word Sense Disambiguation
