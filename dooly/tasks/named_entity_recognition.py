@@ -78,7 +78,6 @@ class NamedEntityRecognition(SequenceTagging):
         self,
         sentences: Union[List[str], str],
         add_special_tokens: bool = True, # ENBERTa, JaBERTa, ZhBERTa에선 없음
-        no_separator: bool = False,
         do_sent_split: bool = True,
         ja_zh_split_force: bool = False, # deprecated
         ignore_labels: List[int] = [],
@@ -106,7 +105,6 @@ class NamedEntityRecognition(SequenceTagging):
         token_label_pairs = self.predict_tags(
             sentences=sentences,
             add_special_tokens=add_special_tokens,
-            no_separator=no_separator,
         )
 
         # Post processing

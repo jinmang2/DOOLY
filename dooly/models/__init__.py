@@ -11,6 +11,7 @@ from transformers.modeling_utils import PreTrainedModel
 from .modeling_fsmt import FSMTConfig, FSMTForConditionalGeneration
 from .modeling_roberta import (
     RobertaConfig,
+    RobertaForDependencyParsing,
     RobertaForSpanPrediction,
     RobertaForSequenceTagging,
     RobertaForSequenceClassification,
@@ -26,6 +27,9 @@ from ..build_utils import (
 
 
 DoolyModelHub = {
+    "dp": {
+        "ko": {"posbert.base": RobertaForDependencyParsing},
+    },
     "mrc": {
         "ko": {"brainbert.base": RobertaForSpanPrediction},
     },

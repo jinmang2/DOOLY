@@ -31,6 +31,7 @@ class _BaseTokenizer:
         assert padding_side in ["right", "left"]
         self.lang = lang
         self.vocab = vocab
+        self.pos_vocab = None
         self.id2token = {i: tok for tok, i in vocab.items()}
         self.cls_token = cls_token
         self.sep_token = sep_token
@@ -93,6 +94,7 @@ class _BaseTokenizer:
         tgt_lang: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
+        return_tags: bool = True,
         return_tensors: Union[str, bool] = False,
         return_attention_mask: bool = True,
         add_special_tokens: bool = True,
@@ -105,6 +107,7 @@ class _BaseTokenizer:
             tgt_lang=tgt_lang,
             padding=padding,
             return_tokens=return_tokens,
+            return_tags=return_tags,
             return_tensors=return_tensors,
             return_attention_mask=return_attention_mask,
             add_special_tokens=add_special_tokens,
@@ -122,7 +125,7 @@ class _BaseTokenizer:
         return SPACE_NORMALIZER.sub(" ", text).strip()
 
     @abstractmethod
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str, *args, **kwargs) -> List[str]:
         pass
 
     def tokenize(
@@ -131,37 +134,64 @@ class _BaseTokenizer:
         text_pair: Optional[str] = None,
         src_lang: Optional[str] = None,
         tgt_lang: Optional[str] = None,
+        return_tags: bool = True,
         add_special_tokens: bool = False,
         no_separator: bool = False,
     ) -> List[str]:
         """
         If you want to use `src_lang` and `tgt_lang` parameters, plz overrides!
         """
+        if self.pos_vocab is None:
+            return_tags = False
+
         tokenized = self._tokenize(text)
+
+        if return_tags:
+            tokenized, tags = tokenized
 
         if add_special_tokens:
             tokenized = [self.cls_token] + tokenized + [self.sep_token]
 
+            if return_tags:
+                tags = [self.cls_token] + tags + [self.sep_token]
+
         if text_pair is not None:
             tokenized += [self.sep_token] if not no_separator else []
-            tokenized += self._tokenize(text_pair)
+            tokenized_pair = self._tokenize(text_pair)
+
+            if return_tags:
+                tags += [self.sep_token] if no_separator else []
+                tokenized_pair, tags_pair = tokenized_pair
+                tags += tags_pair
+
+            tokenized += tokenized_pair
 
             if add_special_tokens:
                 tokenized += [self.sep_token]
+                tags += [self.sep_token]
+
+        if return_tags:
+            return tokenized, tags
 
         return tokenized
 
     def encode_line(
         self,
         tokenized: List[str],
-        add_special_tokens: bool = False
+        add_special_tokens: bool = False,
+        use_pos_vocab: bool = False,
     ) -> List[int]:
+        vocab = self.vocab
+        if use_pos_vocab and self.pos_vocab is not None:
+            vocab = self.pos_vocab
+
         encoded = []
         for token in tokenized:
-            encoded.append(self.vocab.get(token, self.unk_token_id))
+            encoded.append(vocab.get(token, self.unk_token_id))
 
         if add_special_tokens:
             encoded = [self.cls_token_id] + encoded + [self.sep_token_id]
+
         return encoded
 
     def encode(
@@ -172,6 +202,7 @@ class _BaseTokenizer:
         tgt_lang: Optional[InputTexts] = None,
         padding: Union[str, bool] = False,
         return_tokens: bool = False,
+        return_tags: bool = True,
         return_tensors: Union[str, bool] = False,
         return_attention_mask: bool = True,
         add_special_tokens: bool = True,
@@ -195,6 +226,7 @@ class _BaseTokenizer:
                 tgt_lang=[tgt_lang],
                 padding=padding,
                 return_tokens=return_tokens,
+                return_tags=return_tags,
                 return_tensors=return_tensors,
                 return_attention_mask=return_attention_mask,
                 add_special_tokens=add_special_tokens,
@@ -220,6 +252,7 @@ class _BaseTokenizer:
         texts, text_pairs = text, text_pair
         src_langs, tgt_langs = src_lang, tgt_lang
         input_ids = []
+        segment_labels = []
 
         for text, text_pair, src_lang, tgt_lang in zip(
             texts, text_pairs, src_langs, tgt_langs
@@ -229,19 +262,35 @@ class _BaseTokenizer:
                 text_pair=text_pair,
                 src_lang=src_lang,
                 tgt_lang=tgt_lang,
+                return_tags=return_tags,
                 no_separator=no_separator,
                 add_special_tokens=add_special_tokens,
             )
             encoded = None
+            encoded_tags = None
             attn_mask = False
+
+            if return_tags:
+                tokenized, tags = tokenized
 
             if not return_tokens:
                 encoded = self.encode_line(tokenized=tokenized)
 
+                if return_tags:
+                    encoded_tags = self.encode_line(tokenized=tags, use_pos_vocab=True)
+
             input_ids.append(tokenized if return_tokens else encoded)
+
+            if return_tags:
+                segment_labels.append(tags if return_tokens else encoded_tags)
 
         if return_tokens:
             input_ids = input_ids if len(texts) > 1 else input_ids[0]
+
+            if return_tags:
+                segment_labels = segment_labels if len(texts) > 1 else segment_labels[0]
+                return input_ids, segment_labels
+
             return input_ids
 
         attention_mask = None
@@ -254,10 +303,20 @@ class _BaseTokenizer:
             input_ids = padded["input_ids"]
             attention_mask = padded["attention_mask"]
 
+            if return_tags:
+                segment_labels = self.pad(
+                    sequences={"input_ids": segment_labels},
+                    padding=padding,
+                    return_tensors=return_tensors,
+                )["input_ids"]
+
         batch_encoding = {"input_ids": input_ids}
 
         if return_attention_mask and attention_mask is not None:
             batch_encoding.update({"attention_mask": attention_mask})
+
+        if return_tags:
+            batch_encoding.update({"segment_labels": segment_labels})
 
         return batch_encoding
 

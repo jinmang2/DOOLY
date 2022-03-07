@@ -235,3 +235,34 @@ class SequenceTagging(DoolyTaskBase):
         ]
 
         return token_label_pairs
+
+    @torch.no_grad()
+    def predict_dependency(
+        self,
+        sentences: Union[List[str], str],
+        add_special_tokens: bool = True,
+    ) -> Tuple:
+        # Tokenize and get input_ids
+        inputs, tokens_with_pair = self._preprocess(
+            sentences,
+            add_special_tokens=add_special_tokens,
+            return_tokens=True,
+        )
+        tokens = tokens_with_pair[0]
+
+        attention_mask = inputs["attention_mask"]
+        sent_lengths = attention_mask.sum(-1).detach().cpu().numpy() - 2
+
+        inputs = self._prepare_inputs(inputs)
+        dp_outputs = self.model(**inputs)
+
+        heads = dp_outputs.classifier_attention
+        labels = dp_outputs.logits
+
+        heads = heads.argmax(dim=-1).detach().cpu().numpy()[:, 1:-1]
+        labels = labels.argmax(dim=-1).detach().cpu().numpy()[:, 1:-1]
+
+        labelmap0 = np.vectorize(lambda x: self._label0[x + self.tokenizer.nspecial])
+        labelmap1 = np.vectorize(lambda x: self._label1[x + self.tokenizer.nspecial])
+
+        return tokens, labelmap0(heads), labelmap1(labels), sent_lengths

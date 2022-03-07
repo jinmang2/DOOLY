@@ -9,6 +9,7 @@ from .base import Tokenizer
 from .bpe import Gpt2BpeTokenizer, BpeJaZhTokenizer
 from .char import CharS1Tokenizer, CharS2Tokenizer
 from .tokenization_roberta import RobertaTokenizerFast
+from .pos_tagger import PosTagger, PosTaggerMap, PosTokenizer
 from ..build_utils import (
     download_from_hf_hub,
     HUB_NAME,
@@ -18,6 +19,9 @@ from ..build_utils import (
 
 
 DoolyTokenizerHub = {
+    "dp": {
+        "ko": {"posbert.base": PosTokenizer},
+    },
     "mrc": {
         "ko": {"brainbert.base": RobertaTokenizerFast},
     },
@@ -113,6 +117,14 @@ class DoolyTokenizer:
         # _dict_from_json_file
         with open(resolved_vocab_file, "r", encoding="utf-8") as f:
             vocab = json.load(f)
+
+        if "pos" in tokenizer_class.__name__.lower():
+            resolved_pos_vocab_file = _download_from_hf_hub(filename="pos_vocab.json")
+
+            with open(resolved_pos_vocab_file, "r", encoding="utf-8") as f:
+                pos_vocab = json.load(f)
+
+            kwargs.update({"pos_vocab": pos_vocab})
 
         tokenizer = tokenizer_class(lang, vocab, **kwargs)
 

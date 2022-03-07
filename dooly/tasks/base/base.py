@@ -1,4 +1,5 @@
 import abc
+import json
 import pickle
 import inspect
 from dataclasses import dataclass
@@ -88,7 +89,7 @@ class DoolyTaskBase:
                 tokens = self.tokenizer.segment(text, text_pair)
             else:
                 tokens = self.tokenizer.tokenize(text, text_pair, add_special_tokens=False)
-        tokens = [tokens] if len(text) == 1 else tokens
+
         return tokens
 
     def get_inputs(
@@ -108,7 +109,7 @@ class DoolyTaskBase:
             params.update(
                 {
                     "src_lang": src_lang,
-                    "tgt_lang": tgt_lang,    
+                    "tgt_lang": tgt_lang,
                     "no_separator": no_separator,
                 }
             )
@@ -271,6 +272,8 @@ class DoolyTaskBase:
             # TODO: pickle, json 등 파일 유형별 읽는 코드 작성
             if filename.endswith(".pkl"):
                 misc += (pickle.load(open(resolved_file_path, "rb")),)
+            elif filename.endswith(".json"):
+                misc += (json.load(open(resolved_file_path, "r", encoding="utf-8")),)
             elif filename.endswith(".items"):
                 misc += (open(resolved_file_path, "r", encoding="utf-8").readlines(),)
             elif filename.endswith(".txt"):

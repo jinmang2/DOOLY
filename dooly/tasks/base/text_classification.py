@@ -18,14 +18,13 @@ class TextClassification(DoolyTaskBase):
         no_separator: bool = False,
         # show_probs: bool = False,
     ):
-        # Get input_ids
-        params = dict(
-            return_tensors="pt",
+        # Tokenize and get input_ids
+        inputs, = self._preprocess(
+            text=sentences1,
+            text_pair=sentences2,
             add_special_tokens=add_special_tokens,
+            no_separator=no_separator,
         )
-        if not issubclass(self._tokenizer.__class__, PreTrainedTokenizerBase):
-            params.update(dict(no_separator=no_separator))
-        inputs = self._tokenizer(sentences1, sentences2, **params)
 
         # Predict tags and ignore <s> & </s> tokens
         inputs = self._prepare_inputs(inputs)

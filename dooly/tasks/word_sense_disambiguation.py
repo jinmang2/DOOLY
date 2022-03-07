@@ -47,6 +47,7 @@ class WordSenseDisambiguation(Seq2Seq):
         super().__init__(config=config)
         self._tokenizer = tokenizer
         self._model = model
+
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
         self._morph2idx: Dict[str, int] = config.misc_tuple[0] # morpheme to index
         self._tag2idx: Dict[str, int] = config.misc_tuple[1] # tag to index
@@ -62,7 +63,6 @@ class WordSenseDisambiguation(Seq2Seq):
         self,
         sentences: Union[List[str], str],
         add_special_tokens: bool = True,
-        no_separator: bool = False,
         beams: int = 5,
         max_len_a: int = 4,
         max_len_b: int = 50,
@@ -79,7 +79,6 @@ class WordSenseDisambiguation(Seq2Seq):
         generated = self.generate(
             sentences,
             add_special_tokens=add_special_tokens,
-            no_separator=no_separator,
             beams=beams,
             max_len_a=max_len_a,
             max_len_b=max_len_b,

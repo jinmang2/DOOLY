@@ -14,7 +14,6 @@ class Seq2Seq(DoolyTaskBase):
         src_lang: Union[List[str], str] = None,
         tgt_lang: Union[List[str], str] = None,
         add_special_tokens: bool = True,
-        no_separator: bool = False,
         beams: int = 5,
         max_len_a: int = 4,
         max_len_b: int = 50,
@@ -31,20 +30,18 @@ class Seq2Seq(DoolyTaskBase):
             src_lang=src_lang,
             tgt_lang=tgt_lang,
             add_special_tokens=add_special_tokens,
-            no_separator=no_separator,
         )
         input_ids = self._prepare_inputs(inputs)["input_ids"]
 
         do_sample = False
-        if top_k or top_p:
-            assert isinstance(top_p, float) and 0 <= top_p <= 1
+
+        if top_k is not None:
             do_sample = True
+            assert isinstance(top_k, int) and top_k > 0
 
-            if top_k is not None:
-                assert isinstance(top_k, int) and top_k > 0
-
-            if top_p is not None:
-                assert isinstance(top_p, float) and 0 <= top_p <= 1
+        if top_p is not None:
+            do_sample = True
+            assert isinstance(top_p, float) and 0 <= top_p <= 1
 
         # Do not support beam_sample
         if do_sample and beams > 1:

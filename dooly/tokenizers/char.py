@@ -47,6 +47,7 @@ class CharS2Tokenizer(Tokenizer):
         tgt_lang: Optional[str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = False,
+        **kwargs
     ) -> List[str]:
         if (src_lang is None) ^ (tgt_lang is None):
             src_lang = tgt_lang = None

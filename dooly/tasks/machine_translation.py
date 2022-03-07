@@ -174,7 +174,6 @@ class MachineTranslation(Seq2Seq):
             src_lang=src_langs,
             tgt_lang=tgt_langs,
             add_special_tokens=add_special_tokens,
-            no_separator=False,
             beams=beams,
             max_len_a=max_len_a,
             max_len_b=max_len_b,

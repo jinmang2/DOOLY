@@ -179,7 +179,8 @@ class Gpt2BpeTokenizer(Tokenizer):
     def encode_line(
         self,
         tokenized: List[str],
-        add_special_tokens: bool = False
+        add_special_tokens: bool = False,
+        use_pos_vocab: bool = False,
     ) -> List[int]:
         encoded = []
         for bpe_token in tokenized:
