@@ -1,4 +1,4 @@
-# DOOLY
+# DOOLY 🦕
 PORORO의 아래 단점 세 가지를 개선한 라이브러리입니다.
 - 일부 task의 batch화 불가능
 - 내부 tokenize 과정 및 모듈 구조 확인이 어려움
