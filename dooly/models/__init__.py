@@ -8,6 +8,7 @@ import torch
 from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
 
+from .modeling_bart import BartForConditionalGeneration
 from .modeling_fsmt import FSMTConfig, FSMTForConditionalGeneration
 from .modeling_roberta import (
     RobertaConfig,
@@ -50,6 +51,9 @@ DoolyModelHub = {
         "en": {"roberta.base": RobertaForSequenceClassification},
         "ja": {"jaberta.base": RobertaForSequenceClassification},
         "zh": {"zhberta.base": RobertaForSequenceClassification},
+    },
+    "qg": {
+        "ko": {"kobart.base": BartForConditionalGeneration},
     },
     "wsd": {
         "ko": {"transformer.large": FSMTForConditionalGeneration}
