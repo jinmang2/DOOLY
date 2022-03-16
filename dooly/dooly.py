@@ -8,6 +8,8 @@ from .tasks import (
     NamedEntityRecognition as NER,
     NaturalLanguageInference as NLI,
     PosTagging as POS,
+    QuestionGeneration as QG,
+    WordEmbedding,
     WordSenseDisambiguation as WSD,
     ZeroShotClassification as ZT,
 )
@@ -24,6 +26,8 @@ add_task(["mt", "nmt", "translation", "machine_translation", "neural_machine_tra
 add_task(["ner", "named_entity_recognition", "entity_recognition"], NER)
 add_task(["nli", "natural_language_inference"], NLI)
 add_task(["pos", "pos_tag", "pos_tagging"], POS)
+add_task(["qg", "question_generation"], QG)
+add_task(["word_embedding"], WordEmbedding)
 add_task(["wsd", "word_sense_ambiguation"], WSD)
 add_task(["zero_topic", "zt", "zsl", "zero_topic_classification", "zero_shot_classification"], ZT)
 

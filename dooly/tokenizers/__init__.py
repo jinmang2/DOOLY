@@ -3,12 +3,14 @@ import inspect
 from functools import partial
 from typing import Dict, Union, Optional, Tuple, List, TypeVar
 
-from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-
 from .base import Tokenizer
 from .bpe import Gpt2BpeTokenizer, BpeJaZhTokenizer
 from .char import CharS1Tokenizer, CharS2Tokenizer
-from .tokenization_roberta import RobertaTokenizerFast
+from .hf_tokenizer import (
+    PreTrainedTokenizerBase,
+    PreTrainedTokenizerFast,
+    RobertaTokenizerFast,
+)
 from .pos_tagger import PosTagger, PosTaggerMap, PosTokenizer
 from ..build_utils import (
     download_from_hf_hub,
@@ -43,6 +45,9 @@ DoolyTokenizerHub = {
         "ja": {"jaberta.base": BpeJaZhTokenizer},
         "zh": {"zhberta.base": BpeJaZhTokenizer},
     },
+    "qg": {
+        "ko": {"kobart.base": PreTrainedTokenizerFast},
+    }
     "wsd": {
         "ko": {"transformer.large": CharS2Tokenizer},
     },

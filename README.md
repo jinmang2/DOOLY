@@ -41,5 +41,12 @@ ner = Dooly(task="ner", lang="ko")
 - Word Sense Disambiguation
 - Zero Shot Topic Classification
 
+### TODO
+- SRL(NER처럼)
+- STS, Sentence Embedding
+- QG, Word Embedding
+- PG, Summarization
+- Retrieval(DPR)
+
 ## Reference
 - https://github.com/kakaobrain/pororo
