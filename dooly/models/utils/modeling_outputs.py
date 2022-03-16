@@ -15,3 +15,12 @@ class DependencyParsingOutput(ModelOutput):
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
     classifier_attention: Optional[torch.FloatTensor] = None
+
+
+@dataclass
+class DialogueStateTrackingOutput(ModelOutput):
+    loss: Optional[torch.FloatTensor] = None
+    point_outputs: Optional[torch.FloatTensor] = None
+    gate_outputs: Optional[torch.FloatTensor] = None
+    hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    attentions: Optional[Tuple[torch.FloatTensor]] = None

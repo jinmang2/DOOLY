@@ -18,15 +18,18 @@ from .utils.modeling_heads import (
     SpanPredictionHead,
     ClassificationHead,
     DependencyParseHead,
+    SlotGenerator,
 )
 from .utils.modeling_outputs import (
     BaseModelOutputWithPoolingAndCrossAttentions,
     TokenClassifierOutput,
     DependencyParsingOutput,
+    DialogueStateTrackingOutput,
 )
+from utils.modeling_utils import masked_cross_entropy_for_value
 
 
-class RobertaConfig(RobertaConfig):
+class RobertaForDPConfig(RobertaConfig):
 
     def __init__(
         self,
@@ -37,6 +40,19 @@ class RobertaConfig(RobertaConfig):
         super().__init__(**kwargs)
         self.num_segments = num_segments
         self.classifier_num_attention_heads = classifier_num_attention_heads
+
+
+class RobertaForDSTConfig(RobertaConfig):
+
+    def __init__(
+        self,
+        teacher_forcing: float = 0.5,
+        parallel_decoding: bool = True,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.teacher_forcing = teacher_forcing
+        self.parallel_decoding = parallel_decoding
 
 
 class RobertaForSpanPrediction(RobertaForQuestionAnswering):
@@ -354,6 +370,8 @@ class SegmentRobertaModel(RobertaModel):
 
 
 class RobertaForDependencyParsing(RobertaPreTrainedModel):
+    config_class = RobertaForDPConfig
+
     _keys_to_ignore_on_load_unexpected = [r"pooler"]
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
@@ -421,6 +439,99 @@ class RobertaForDependencyParsing(RobertaPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
             classifier_attention=classifier_attn,
+        )
+
+
+class RobertaForDialogueStateTracking(RobertaPreTrainedModel):
+    config_class = RobertaForDSTConfig
+
+    _keys_to_ignore_on_load_unexpected = [r"pooler"]
+    _keys_to_ignore_on_load_missing = [r"position_ids"]
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.teacher_forcing = config.teacher_forcing
+
+        self.roberta = RobertaModel(config, add_pooling_layer=True)
+        self.decoder = SlotGenerator(config)
+
+        self.post_init()
+
+    def _tie_weights(self):
+        # Share the embedding layer for both encoder and decoder
+        self.decoder.embed.weight = self.roberta.embeddings.word_embeddings.weight
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        gating_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        labels=None,
+        target_ids=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
+    ):
+        outputs = self.roberta(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )
+        encoder_output = outputs[0] # last_hidden_state
+        pooler_output = outputs[1].unsqueeze(0) # pooler_output
+
+        max_len, teacher = 10, None
+        if target_ids is not None:
+            max_len = target_ids.size(-1)
+            if self.teacher_forcing > 0.0 and random.random() < self.teacher_forcing:
+                teacher = target_ids
+
+        all_point_outputs, all_gate_outputs = self.decoder(
+            input_ids=input_ids,
+            encoder_output=encoder_output,
+            hidden=pooler_output,
+            input_masks=attention_mask,
+            max_len=max_len,
+            teacher=teacher,
+        )
+
+        loss = None
+        if target_ids is not None:
+            # generation loss
+            loss_gen = masked_cross_entropy_for_value(
+                all_point_outputs.contiguous(),
+                target_ids.contiguous().view(-1),
+                self.decoder.pad_token_id,
+            )
+            # gate loss
+            loss_fct = nn.CrossEntropyLoss()
+            loss_gate = loss_fct(
+                all_gate_outputs.contiguous().view(-1, self.decoder.num_gates),
+                gating_ids.contiguous().view(-1),
+            )
+            # total loss = generation loss + gate loss
+            loss = loss_gen + loss_gate
+
+        if not return_dict:
+            output = (all_point_outputs, all_gate_outputs,) + outputs[2:]
+            return ((loss,) + output) if loss is not None else output
+
+        return DialogueStateTrackingOutput(
+            loss=loss,
+            point_outputs=all_point_outputs,
+            gate_outputs=all_gate_outputs,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
         )
 
 
