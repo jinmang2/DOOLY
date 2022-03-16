@@ -144,7 +144,7 @@ class MachineReadingComprehension(SequenceTagging):
         elif postprocess:
             postprocess_fn = self._postprocess
 
-        # single(multiple) query -> single(multiple) context
+        # single query -> single context
         if type(query) == type(context) and isinstance(query, str):
             query = [query]
             context = [context]

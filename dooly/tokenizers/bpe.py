@@ -119,7 +119,6 @@ class Encoder:
         self.cache[token] = word
         return word
 
-    # def encode(self, text: str) -> List[int]:
     def encode(self, text: str) -> List[str]:
         bpe_tokens = []
         for token in self.re.findall(self.pat, text):
