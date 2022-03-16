@@ -1,6 +1,8 @@
 from typing import List, Union, Optional
 from tokenizers import Encoding
 from transformers import RobertaTokenizerFast as _RobertaTokenizerFast
+from transformers import PreTrainedTokenizerBase
+from transformers import PreTrainedTokenizerFast as _PreTrainedTokenizerFast
 
 from .base import InputTexts, TokenizedOutput, SentTokenizeMixin
 
@@ -91,3 +93,7 @@ class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
             s, e = offset
             result.append(text[s:e])
         return result
+
+
+class PreTrainedTokenizerFast(_PreTrainedTokenizerFast, SentTokenizeMixin):
+    pass
