@@ -6,10 +6,10 @@ import numpy as np
 from transformers import PreTrainedTokenizerBase
 from transformers.modeling_outputs import ModelOutput
 
-from .base import DoolyTaskBase
+from .base import DoolyTaskWithModelTokenzier
 
 
-class SequenceTagging(DoolyTaskBase):
+class SequenceTagging(DoolyTaskWithModelTokenzier):
 
     def find_nbest_predictions(
         self,

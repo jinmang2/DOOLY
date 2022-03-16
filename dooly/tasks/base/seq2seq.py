@@ -2,10 +2,10 @@ from typing import Union, List, Tuple, Dict, Optional
 
 import torch
 
-from .base import DoolyTaskBase
+from .base import DoolyTaskWithModelTokenzier
 
 
-class Seq2Seq(DoolyTaskBase):
+class Seq2Seq(DoolyTaskWithModelTokenzier):
 
     @torch.no_grad()
     def generate(

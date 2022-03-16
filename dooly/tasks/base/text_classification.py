@@ -4,10 +4,10 @@ import torch
 import numpy as np
 from transformers import PreTrainedTokenizerBase
 
-from .base import DoolyTaskBase
+from .base import DoolyTaskWithModelTokenzier
 
 
-class TextClassification(DoolyTaskBase):
+class TextClassification(DoolyTaskWithModelTokenzier):
 
     @torch.no_grad()
     def predict_outputs(
