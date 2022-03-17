@@ -38,11 +38,20 @@ def normalize_task(task: str):
     return task
 
 
+LANG_ALIASES = {}
+LANG_ALIASES.update(dict.fromkeys(["ko", "korean", "kor", "kr"], "ko"))
+LANG_ALIASES.update(dict.fromkeys(["en", "english", "eng"], "en"))
+LANG_ALIASES.update(dict.fromkeys(["ja", "japanese", "jap", "jp"], "ko"))
+LANG_ALIASES.update(dict.fromkeys(["zh", "chinese", "chn", "cn"], "ko"))
+LANG_ALIASES.update(dict.fromkeys(["je", "jejueo", "jje"], "je"))
+LANG_ALIASES.update(dict.fromkeys(["multi", "multilingual"], "multi"))
+
+
 class Dooly:
     def __new__(
         cls,
         task: str,
-        lang: str,
+        lang: Optional[str] = None,
         n_model: Optional[str] = None,
         **kwargs
      ):
@@ -52,4 +61,22 @@ class Dooly:
             raise KeyError (
                 f"Unavailable task name '{task}'. See here {DOOLY_HUB_CONTENTS.keys()}"
             )
+        if lang is not None:
+            lang = LANG_ALIASES.get(lang.lower(), None)
         return task_cls.build(lang, n_model, **kwargs)
+
+    @staticmethod
+    def available_tasks() -> str:
+        return f"Available tasks are {list(DOOLY_HUB_CONTENTS.keys())}."
+
+    @staticmethod
+    def available_models(task: str) -> str:
+        if task not in DOOLY_HUB_CONTENTS:
+            raise KeyError(
+                f"Unknown task {task}. Please check available models via `available_tasks()`."
+            )
+
+        output = f"Available models for {task} are "
+        for lang, models in DOOLY_HUB_CONTENTS[task].available_models.items():
+            output += f"([lang]: {lang}, [model]: {', '.join(models)}), "
+        return output[:-2]
