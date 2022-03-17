@@ -87,3 +87,15 @@ class QuestionGeneration(Seq2Seq):
         length_penalty: float = 1.0,
         **kwargs,
     ):
+        if isinstance(answer, str) and isinstance(context, str):
+            context = self._focus_answer(context, answer)
+        elif isinstance(answer, list) and isinstance(context, str):
+            context = [self._focus_answer(context, a) for a in answer]
+        elif isinstance(answer, str) and isinstance(context, list):
+            context = [self._focus_answer(c, answer) for c in context]
+        elif isinstance(answer, list) and isinstance(context, list):
+            assert len(answer) == len(context), (
+                "length of answer list and context list must be same."
+            )
+            context = [self._focus_answer(c, a) for c, a in zip(context, answer)]
+        return None
