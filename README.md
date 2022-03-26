@@ -38,6 +38,7 @@ ner = Dooly(task="ner", lang="ko")
 - Named Entity Recognition
 - Natural Language Inference
 - Pos Tagging
+- Question Generation
 - Word Embedding
 - Word Sense Disambiguation
 - Zero Shot Topic Classification
@@ -45,7 +46,6 @@ ner = Dooly(task="ner", lang="ko")
 ### TODO
 - SRL(NER처럼)
 - STS, Sentence Embedding
-- QG, 
 - PG, Summarization
 - Retrieval(DPR)
 
