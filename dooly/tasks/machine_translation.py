@@ -4,7 +4,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from .base import DoolyTaskConfig, Seq2Seq
 from ..tokenizers import Tokenizer as _Tokenizer
-from ..tokenizers import RobertaTokenizerFast
+from ..tokenizers import RobertaTokenizerFast, PreTrainedTokenizerBase
 from ..build_utils import HUB_NAME
 
 Tokenizer = Union[_Tokenizer, PreTrainedTokenizerBase]
@@ -189,7 +189,14 @@ class MachineTranslation(Seq2Seq):
             **kwargs
         )
 
-        decoded_text = self.tokenizer.decode(generated)
+        if issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
+            decoded_text = self.tokenizer.batch_decode(
+                generated,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True,
+            )
+        else:
+            decoded_text = self.tokenizer.decode(generated)
 
         results = []
         ix = 0
