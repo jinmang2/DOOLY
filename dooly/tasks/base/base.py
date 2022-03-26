@@ -146,9 +146,40 @@ class DoolyTaskBase:
         cls,
         lang: str = None,
         n_model: str = None,
+        tok_kwargs: Dict = {},
+        model_kwargs: Dict = {},
         **kwargs
     ):
-        raise NotImplementedError
+        lang, n_model = cls._check_validate_input(lang, n_model)
+
+        # parse device option from kwargs
+        device = kwargs.pop("device", DEFAULT_DEVICE)
+
+        # parse download keyword arguments
+        dl_kwargs = {}
+        dl_kwargs["revision"] = kwargs.pop("revision", None)
+        dl_kwargs["cache_dir"] = kwargs.pop("cache_dir", None)
+        dl_kwargs["force_download"] = kwargs.pop("force_download", False)
+        dl_kwargs["resume_download"] = kwargs.pop("resume_download", False)
+
+        # set tokenizer
+        tokenizer = cls.build_tokenizer(cls.task, lang, n_model, **dl_kwargs, **tok_kwargs)
+        # set model
+        model = cls.build_model(cls.task, lang, n_model, **dl_kwargs, **model_kwargs)
+        # set misc
+        misc_files = cls.misc_files.get(lang, [])
+        misc = cls.build_misc(lang, n_model, misc_files, **dl_kwargs)
+
+        config = DoolyTaskConfig(lang=lang, n_model=n_model, device=device, misc_tuple=misc)
+
+        init_params = inspect.signature(cls.__init__).parameters
+        init_kwargs = {"config": config}
+        if tokenizer is not None and "tokenizer" in init_params:
+            init_kwargs.update({"tokenizer": tokenizer})
+        if model is not None and "model" in init_params:
+            init_kwargs.update({"model": model})
+
+        return cls(**init_kwargs)
 
     @staticmethod
     def build_tokenizer(task: str, lang: str, n_model: str, **kwargs):
@@ -250,39 +281,6 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
     @property
     def tokenizer(self):
         return self._tokenizer
-
-    @classmethod
-    def build(
-        cls,
-        lang: str = None,
-        n_model: str = None,
-        tok_kwargs: Dict = {},
-        model_kwargs: Dict = {},
-        **kwargs
-    ):
-        lang, n_model = cls._check_validate_input(lang, n_model)
-
-        # parse device option from kwargs
-        device = kwargs.pop("device", DEFAULT_DEVICE)
-
-        # parse download keyword arguments
-        dl_kwargs = {}
-        dl_kwargs["revision"] = kwargs.pop("revision", None)
-        dl_kwargs["cache_dir"] = kwargs.pop("cache_dir", None)
-        dl_kwargs["force_download"] = kwargs.pop("force_download", False)
-        dl_kwargs["resume_download"] = kwargs.pop("resume_download", False)
-
-        # set tokenizer
-        tokenizer = cls.build_tokenizer(cls.task, lang, n_model, **dl_kwargs, **tok_kwargs)
-        # set model
-        model = cls.build_model(cls.task, lang, n_model, **dl_kwargs, **model_kwargs)
-        # set misc
-        misc_files = cls.misc_files.get(lang, [])
-        misc = cls.build_misc(lang, n_model, misc_files, **dl_kwargs)
-
-        config = DoolyTaskConfig(lang=lang, n_model=n_model, device=device, misc_tuple=misc)
-
-        return cls(config, tokenizer, model)
 
     @staticmethod
     def build_tokenizer(task: str, lang: str, n_model: str, **kwargs):
