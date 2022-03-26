@@ -20,7 +20,6 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
         max_answer_length: int = 30,
         null_score_diff_threshold: float = 0.0,
         version2_with_negative: bool = False,
-        is_end_position_shifted: bool = True,
     ):
         # Build a map example to its corresponding features
         all_start_logits, all_end_logits = predictions[:2]
@@ -73,9 +72,6 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                 end_indexes = np.argsort(end_logits)[-1 : -n_best_size - 1 : -1].tolist()
                 for start_index in start_indexes:
                     for end_index in end_indexes:
-                        # If end position is shifted during training, add 1 back
-                        if is_end_position_shifted:
-                            end_index += 1
                         # Don't consider out-of-scope answers!
                         # either because the indices are out of bounds
                         # or correspond to part of the input_ids that are note in the context
@@ -120,7 +116,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             # In the very rare edge case we have not a single non-null prediction
             # we create a fake predictions to avoid failure
             if len(predictions) == 0 or (len(predictions) == 1 and predictions[0]["text"] == ""):
-                predictions.insert(0, dict(text="", start_logit=0.0, end_logit=0.0, score=0.0))
+                predictions.insert(0, dict(text="", offsets=(0, 0), start_logit=0.0, end_logit=0.0, score=0.0))
 
             # Compute the softmax of all scores
             # (we do it with numpy to stay independent from torch in this file,
@@ -199,6 +195,12 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             n_best_size=n_best_size,
             null_score_diff_threshold=null_score_diff_threshold,
         )
+
+        # dict to list
+        predictions = list(predictions.values())
+        all_nbest = list(all_nbest.values())
+        if scores_diff is not None:
+            scores_diff = list(scores_diff.values())
 
         return predictions, all_nbest, scores_diff
 

@@ -71,6 +71,8 @@ class MachineReadingComprehension(SequenceTagging):
         self,
         text: Union[List[str], str],
         text_pair: Union[List[str], str] = None,
+        src_lang: Union[List[str], str] = None,
+        tgt_lang: Union[List[str], str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = True,
     ): # overrides
@@ -132,7 +134,7 @@ class MachineReadingComprehension(SequenceTagging):
         query: Union[List[str], str],
         context: Union[List[str], str],
         postprocess: Union[bool, Callable] = True,
-        n_best_size: int = 20,
+        n_best_size: int = 1,
         null_score_diff_threshold: float = 0.0,
         add_special_tokens: bool = True,
         no_separator: bool = False,
@@ -157,7 +159,7 @@ class MachineReadingComprehension(SequenceTagging):
         if isinstance(context, str):
             context = [context] * len(query)
 
-        preds, all_nbest, _ = self.predict_span(
+        _, all_nbest, _ = self.predict_span(
             question=query,
             context=context,
             n_best_size=n_best_size,
@@ -168,8 +170,6 @@ class MachineReadingComprehension(SequenceTagging):
             verbose=verbose,
         )
 
-        # @TODO: batchify
-        all_nbest = list(all_nbest.values())
         if postprocess_fn is not None:
             for nbest in all_nbest:
                 for pred in nbest:
