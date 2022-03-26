@@ -95,7 +95,7 @@ class DoolyTokenizer:
     ) -> Union[Tokenizer, PreTrainedTokenizerBase]:
 
         if issubclass(tokenizer_class, PreTrainedTokenizerBase):
-            return tokenizer_class.from_pretrained(
+            tokenizer = tokenizer_class.from_pretrained(
                 pretrained_model_name_or_path=HUB_NAME,
                 subfolder=f"{task}/{lang}/{n_model}",
                 revision=revision,
@@ -104,6 +104,8 @@ class DoolyTokenizer:
                 resume_download=resume_download,
                 **kwargs,
             )
+            tokenizer.lang = lang
+            return tokenizer
 
         _download_from_hf_hub = partial(
             download_from_hf_hub,

@@ -59,7 +59,7 @@ def batchify(func: Callable):
         elif isinstance(batch_outputs, np.ndarray):
             outputs = np.concatenate(outputs, batch_outputs, axis=0)
         elif isinstance(batch_outputs, torch.Tensor):
-            outputs = torch.concat(outputs, batch_outputs, dim=0)
+            outputs = torch.cat((outputs, batch_outputs), dim=0)
         return outputs
 
     # do not use arguments
@@ -78,7 +78,7 @@ def batchify(func: Callable):
         batch_cols = Dataset.from_dict(batch_cols)
 
         outputs = None
-        for i in tqdm(range(n_samples // batch_size + 1), disable=not verbose):
+        for i in tqdm(range((n_samples - 1) // batch_size + 1), disable=not verbose):
             cols = batch_cols[i * batch_size : (i + 1) * batch_size]
             batch_outputs = func(*args, **cols, **kwargs)
             if isinstance(batch_outputs, tuple):
@@ -250,7 +250,10 @@ class DoolyTaskBase:
 
             # TODO: pickle, json 등 파일 유형별 읽는 코드 작성
             if filename.endswith(".pkl"):
-                misc += (pickle.load(open(resolved_file_path, "rb")),)
+                try:
+                    misc += (pickle.load(open(resolved_file_path, "rb")),)
+                except pickle.UnpicklingError:
+                    misc += (resolved_file_path,)
             elif filename.endswith(".json"):
                 misc += (json.load(open(resolved_file_path, "r", encoding="utf-8")),)
             elif filename.endswith(".items"):
@@ -384,7 +387,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
             return_tensors="pt",
             add_special_tokens=add_special_tokens,
         )
-        if len(text) > 1 and len(text_pair) > 1:
+        if len(text) > 1:
             params.update({"padding": True})
         if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
             params.update(
