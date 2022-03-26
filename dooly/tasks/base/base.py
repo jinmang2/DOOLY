@@ -62,7 +62,6 @@ class DoolyTaskBase:
     def device(self):
         return self.config.device
 
-    @abc.abstractmethod
     @classmethod
     def build(
         cls,
@@ -70,7 +69,7 @@ class DoolyTaskBase:
         n_model: str = None,
         **kwargs
     ):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def build_tokenizer(task: str, lang: str, n_model: str, **kwargs):
@@ -308,6 +307,8 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
             return_tensors="pt",
             add_special_tokens=add_special_tokens,
         )
+        if len(text) > 1 and len(text_pair) > 1:
+            params.update({"padding": True})
         if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
             params.update(
                 {

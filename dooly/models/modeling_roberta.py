@@ -26,7 +26,7 @@ from .utils.modeling_outputs import (
     DependencyParsingOutput,
     DialogueStateTrackingOutput,
 )
-from utils.modeling_utils import masked_cross_entropy_for_value
+from .utils.modeling_utils import masked_cross_entropy_for_value
 
 
 class RobertaForDPConfig(RobertaConfig):

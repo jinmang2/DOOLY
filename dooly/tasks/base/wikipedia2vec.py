@@ -10,6 +10,8 @@ import numpy as np
 import six
 import torch
 
+from typing import List
+
 
 def is_available_marisa_trie():
     return importlib.util.find_spec("marisa_trie")

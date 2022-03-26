@@ -47,7 +47,7 @@ DoolyTokenizerHub = {
     },
     "qg": {
         "ko": {"kobart.base": PreTrainedTokenizerFast},
-    }
+    },
     "wsd": {
         "ko": {"transformer.large": CharS2Tokenizer},
     },
