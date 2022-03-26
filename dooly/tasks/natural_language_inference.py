@@ -63,6 +63,8 @@ class NaturalLanguageInference(TextClassification):
         sentences2: Union[List[str], str],
         add_special_tokens: bool = True,
         no_separator: bool = False,
+        batch_size: int = 32,
+        verbose: bool = True,
     ):
         assert type(sentences1) == type(sentences2)
 
@@ -77,6 +79,8 @@ class NaturalLanguageInference(TextClassification):
             sentences2=sentences2,
             add_special_tokens=add_special_tokens,
             no_separator=no_separator,
+            batch_size=batch_size,
+            verbose=verbose,
         )
 
         if len(sentences1) == 1:

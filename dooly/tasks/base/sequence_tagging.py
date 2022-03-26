@@ -6,7 +6,7 @@ import numpy as np
 from transformers import PreTrainedTokenizerBase
 from transformers.modeling_outputs import ModelOutput
 
-from .base import DoolyTaskWithModelTokenzier
+from .base import batchify, DoolyTaskWithModelTokenzier
 
 
 class SequenceTagging(DoolyTaskWithModelTokenzier):
@@ -163,6 +163,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return all_predictions, all_nbest_json, scores_diff_json
 
+    @batchify
     @torch.no_grad()
     def predict_span(
         self,
@@ -201,6 +202,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return predictions, all_nbest, scores_diff
 
+    @batchify
     @torch.no_grad()
     def predict_tags(
         self,
@@ -236,6 +238,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return token_label_pairs
 
+    @batchify
     @torch.no_grad()
     def predict_dependency(
         self,

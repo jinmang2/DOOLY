@@ -5,14 +5,93 @@ import pickle
 import zipfile
 import inspect
 from dataclasses import dataclass
-from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any
+from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any, Callable
 
+import numpy as np
 import torch
+from datasets import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from ...build_utils import download_from_hf_hub, HUB_NAME, DEFAULT_DEVICE
 from ...tokenizers import Tokenizer, DoolyTokenizer
 from ...models import DoolyModel
+
+
+def is_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+
+if is_notebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
+
+
+def batchify(func: Callable):
+
+    func_name = func.__name__
+    column_name_used_in_batch = {
+        "generate": ["text", "src_lang", "tgt_lang"],
+        "predict_outputs": ["sentences1", "sentences2"],
+        "predict_span": ["question", "context"],
+        "predict_tags": ["sentences"],
+        "predict_dependency": ["sentences"],
+    }
+    batch_col_names = column_name_used_in_batch[func_name]
+
+    def merge(outputs, batch_outputs):
+        if outputs is None:
+            return batch_outputs
+        assert type(outputs) == type(batch_outputs)
+        if isinstance(batch_outputs, list):
+            outputs += batch_outputs
+        elif isinstance(batch_outputs, dict):
+            outputs.update(batch_outputs)
+        elif isinstance(batch_outputs, np.ndarray):
+            outputs = np.concatenate(outputs, batch_outputs, axis=0)
+        elif isinstance(batch_outputs, torch.Tensor):
+            outputs = torch.concat(outputs, batch_outputs, dim=0)
+        return outputs
+
+    # do not use arguments
+    def wrapper(*args, **kwargs):
+        batch_size = kwargs.pop("batch_size", 1)
+        verbose = kwargs.pop("verbose", True)
+
+        batch_cols = {}
+        for i, col_name in enumerate(batch_col_names):
+            col = kwargs.pop(col_name, None)
+            if i == 0:
+                n_samples = len(col) # since list
+            if col is None:
+                continue
+            batch_cols.update({col_name: col})
+        batch_cols = Dataset.from_dict(batch_cols)
+
+        outputs = None
+        for i in tqdm(range(n_samples // batch_size + 1), disable=not verbose):
+            cols = batch_cols[i * batch_size : (i + 1) * batch_size]
+            batch_outputs = func(*args, **cols, **kwargs)
+            if isinstance(batch_outputs, tuple):
+                if outputs is None:
+                    outputs = [None] * len(batch_outputs)
+                for ix, (output, batch_output) in enumerate(zip(outputs, batch_outputs)):
+                    outputs[ix] = merge(output, batch_output)
+            else:
+                outputs = merge(outputs, batch_outputs)
+
+        return outputs
+
+    return wrapper
 
 
 @dataclass

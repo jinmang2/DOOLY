@@ -51,6 +51,8 @@ class DependencyParsing(SequenceTagging):
         self,
         sentences: Union[List[str], str],
         add_special_tokens: bool = True,
+        batch_size: int = 32,
+        verbose: bool = True,
     ):
         if isinstance(sentences, str):
             sentences = [sentences]
@@ -58,6 +60,8 @@ class DependencyParsing(SequenceTagging):
         tokens, heads, labels, sent_lengths = self.predict_dependency(
             sentences=sentences,
             add_special_tokens=add_special_tokens,
+            batch_size=batch_size,
+            verbose=verbose,
         )
 
         results = []

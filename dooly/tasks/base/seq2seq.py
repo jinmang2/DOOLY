@@ -2,11 +2,12 @@ from typing import Union, List, Tuple, Dict, Optional
 
 import torch
 
-from .base import DoolyTaskWithModelTokenzier
+from .base import batchify, DoolyTaskWithModelTokenzier
 
 
 class Seq2Seq(DoolyTaskWithModelTokenzier):
 
+    @batchify
     @torch.no_grad()
     def generate(
         self,

@@ -82,6 +82,8 @@ class NamedEntityRecognition(SequenceTagging):
         ja_zh_split_force: bool = False, # deprecated
         ignore_labels: List[int] = [],
         apply_wsd: bool = False,
+        batch_size: int = 32,
+        verbose: bool = True,
     ):
         if apply_wsd and self.lang != "ko":
             apply_wsd = False
@@ -105,6 +107,8 @@ class NamedEntityRecognition(SequenceTagging):
         token_label_pairs = self.predict_tags(
             sentences=sentences,
             add_special_tokens=add_special_tokens,
+            batch_size=batch_size,
+            verbose=verbose,
         )
 
         # Post processing

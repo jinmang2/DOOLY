@@ -137,6 +137,8 @@ class MachineReadingComprehension(SequenceTagging):
         add_special_tokens: bool = True,
         no_separator: bool = False,
         return_logits: bool = False,
+        batch_size: int = 32,
+        verbose: bool = True,
     ):
         postprocess_fn = None
         if callable(postprocess):
@@ -161,7 +163,9 @@ class MachineReadingComprehension(SequenceTagging):
             n_best_size=n_best_size,
             null_score_diff_threshold=null_score_diff_threshold,
             add_special_tokens=add_special_tokens,
-            no_separator=no_separator
+            no_separator=no_separator,
+            batch_size=batch_size,
+            verbose=verbose,
         )
 
         # @TODO: batchify

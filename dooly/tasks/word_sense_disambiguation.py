@@ -71,13 +71,15 @@ class WordSenseDisambiguation(Seq2Seq):
         top_p: Optional[float] = None,
         no_repeat_ngram_size: int = 0,
         length_penalty: float = 1.0,
+        batch_size: int = 32,
+        verbose: bool = True,
         **kwargs,
     ):
         if isinstance(sentences, str):
             sentences = [sentences]
 
         generated = self.generate(
-            sentences,
+            text=sentences,
             add_special_tokens=add_special_tokens,
             beams=beams,
             max_len_a=max_len_a,
@@ -87,6 +89,8 @@ class WordSenseDisambiguation(Seq2Seq):
             top_p=top_p,
             no_repeat_ngram_size=no_repeat_ngram_size,
             length_penalty=length_penalty,
+            batch_size=batch_size,
+            verbose=verbose,
             **kwargs,
         )
 

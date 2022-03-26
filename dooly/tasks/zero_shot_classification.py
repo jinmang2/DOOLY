@@ -76,39 +76,43 @@ class ZeroShotClassification(NaturalLanguageInference):
         sentences: Union[List[str], str],
         labels: List[str],
         add_special_tokens: bool = True,
+        batch_size: int = 32,
     ) -> List[Dict[str, float]]:
         if isinstance(sentences, str):
             sentences = [sentences]
 
-        batch_size = len(sentences)
+        n_samples = len(sentences)
 
         cands = [
             self._templates[self.lang].format(label=label)
             for label in labels
         ]
 
-        # all_probs.shape == (batch_size, n_labels)
-        all_probs = np.array([], dtype=np.float64).reshape(batch_size, 0)
+        # all_probs.shape == (n_samples, n_labels)
+        all_probs = np.array([], dtype=np.float64).reshape(n_samples, 0)
         for cand in cands:
-            inputs = self._tokenizer(
-                sentences,
-                [cand] * batch_size,
-                return_tensors="pt",
-                add_special_tokens=add_special_tokens,
-            )
-            inputs = self._prepare_inputs(inputs)
-            # Throw away "neutral"
-            logits = self._model(**inputs).logits
-            preds = logits[:, self.not_neutral_label_ids]
-            # Take the probability of "entailment" as the probability of the label being true
-            probs = preds.softmax(dim=-1)[:, 1].detach().cpu().numpy()
+            probs = np.array([], dtype=np.float64)
+            for i in range(n_samples // batch_size + 1):
+                sents = sentences[i * batch_size : (i + 1) * batch_size]
+                inputs = self._tokenizer(
+                    sents,
+                    [cand] * len(sents),
+                    return_tensors="pt",
+                    add_special_tokens=add_special_tokens,
+                )
+                inputs = self._prepare_inputs(inputs)
+                # Throw away "neutral"
+                logits = self._model(**inputs).logits
+                preds = logits[:, self.not_neutral_label_ids]
+                # Take the probability of "entailment" as the probability of the label being true
+                probs = np.hstack([probs, preds.softmax(dim=-1)[:, 1].detach().cpu().numpy()])
             all_probs = np.hstack([all_probs, probs.reshape(-1, 1)])
 
         all_probs = (all_probs * 100).round(2)
 
         results = [dict(zip(labels, prob)) for prob in all_probs.tolist()]
 
-        if batch_size == 1:
+        if n_samples == 1:
             results = results[0]
 
         return results

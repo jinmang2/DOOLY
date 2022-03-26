@@ -156,6 +156,8 @@ class MachineTranslation(Seq2Seq):
         top_p: Optional[float] = None,
         no_repeat_ngram_size: int = 4,
         length_penalty: float = 1.0,
+        batch_size: int = 32,
+        verbose: bool = True,
         **kwargs,
     ):
         if isinstance(sentences, str):
@@ -182,6 +184,8 @@ class MachineTranslation(Seq2Seq):
             top_p=top_p,
             no_repeat_ngram_size=no_repeat_ngram_size,
             length_penalty=length_penalty,
+            batch_size=batch_size,
+            verbose=verbose,
             **kwargs
         )
 
