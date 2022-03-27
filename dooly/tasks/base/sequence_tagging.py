@@ -159,7 +159,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return all_predictions, all_nbest_json, scores_diff_json
 
-    @batchify
+    @batchify("question", "context")
     @torch.no_grad()
     def predict_span(
         self,
@@ -204,7 +204,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return predictions, all_nbest, scores_diff
 
-    @batchify
+    @batchify("sentences")
     @torch.no_grad()
     def predict_tags(
         self,
@@ -240,7 +240,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
         return token_label_pairs
 
-    @batchify
+    @batchify("sentences")
     @torch.no_grad()
     def predict_dependency(
         self,

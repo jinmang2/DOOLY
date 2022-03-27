@@ -7,7 +7,7 @@ from .base import batchify, DoolyTaskWithModelTokenzier
 
 class Seq2Seq(DoolyTaskWithModelTokenzier):
 
-    @batchify
+    @batchify("text", "src_lang", "tgt_lang")
     @torch.no_grad()
     def generate(
         self,

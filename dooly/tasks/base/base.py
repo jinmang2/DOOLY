@@ -35,63 +35,63 @@ if is_notebook():
 else:
     from tqdm import tqdm
 
+# key: func_name, value: batch_args
+_COLUMN_NAME_USED_IN_BATCH = {}
 
-def batchify(func: Callable):
+def batchify(*batch_args):
 
-    func_name = func.__name__
-    column_name_used_in_batch = {
-        "generate": ["text", "src_lang", "tgt_lang"],
-        "predict_outputs": ["sentences1", "sentences2"],
-        "predict_span": ["question", "context"],
-        "predict_tags": ["sentences"],
-        "predict_dependency": ["sentences"],
-    }
-    batch_col_names = column_name_used_in_batch[func_name]
+    def _batchify(func: Callable):
+        func_name = func.__name__
+        if func_name not in _COLUMN_NAME_USED_IN_BATCH:
+            _COLUMN_NAME_USED_IN_BATCH[func_name] = list(batch_args)
+        batch_col_names = column_name_used_in_batch[func_name]
 
-    def merge(outputs, batch_outputs):
-        if outputs is None:
-            return batch_outputs
-        assert type(outputs) == type(batch_outputs)
-        if isinstance(batch_outputs, list):
-            outputs += batch_outputs
-        elif isinstance(batch_outputs, dict):
-            outputs.update(batch_outputs)
-        elif isinstance(batch_outputs, np.ndarray):
-            outputs = np.concatenate(outputs, batch_outputs, axis=0)
-        elif isinstance(batch_outputs, torch.Tensor):
-            outputs = torch.cat((outputs, batch_outputs), dim=0)
-        return outputs
+        def merge(outputs, batch_outputs):
+            if outputs is None:
+                return batch_outputs
+            assert type(outputs) == type(batch_outputs)
+            if isinstance(batch_outputs, list):
+                outputs += batch_outputs
+            elif isinstance(batch_outputs, dict):
+                outputs.update(batch_outputs)
+            elif isinstance(batch_outputs, np.ndarray):
+                outputs = np.concatenate(outputs, batch_outputs, axis=0)
+            elif isinstance(batch_outputs, torch.Tensor):
+                outputs = torch.cat((outputs, batch_outputs), dim=0)
+            return outputs
 
-    # do not use arguments
-    def wrapper(*args, **kwargs):
-        batch_size = kwargs.pop("batch_size", 1)
-        verbose = kwargs.pop("verbose", True)
+        # do not use arguments
+        def wrapper(*args, **kwargs):
+            batch_size = kwargs.pop("batch_size", 1)
+            verbose = kwargs.pop("verbose", True)
 
-        batch_cols = {}
-        for i, col_name in enumerate(batch_col_names):
-            col = kwargs.pop(col_name, None)
-            if i == 0:
-                n_samples = len(col) # since list
-            if col is None:
-                continue
-            batch_cols.update({col_name: col})
-        batch_cols = Dataset.from_dict(batch_cols)
+            batch_cols = {}
+            for i, col_name in enumerate(batch_col_names):
+                col = kwargs.pop(col_name, None)
+                if i == 0:
+                    n_samples = len(col) # since list
+                if col is None:
+                    continue
+                batch_cols.update({col_name: col})
+            batch_cols = Dataset.from_dict(batch_cols)
 
-        outputs = None
-        for i in tqdm(range((n_samples - 1) // batch_size + 1), disable=not verbose):
-            cols = batch_cols[i * batch_size : (i + 1) * batch_size]
-            batch_outputs = func(*args, **cols, **kwargs)
-            if isinstance(batch_outputs, tuple):
-                if outputs is None:
-                    outputs = [None] * len(batch_outputs)
-                for ix, (output, batch_output) in enumerate(zip(outputs, batch_outputs)):
-                    outputs[ix] = merge(output, batch_output)
-            else:
-                outputs = merge(outputs, batch_outputs)
+            outputs = None
+            for i in tqdm(range((n_samples - 1) // batch_size + 1), disable=not verbose):
+                cols = batch_cols[i * batch_size : (i + 1) * batch_size]
+                batch_outputs = func(*args, **cols, **kwargs)
+                if isinstance(batch_outputs, tuple):
+                    if outputs is None:
+                        outputs = [None] * len(batch_outputs)
+                    for ix, (output, batch_output) in enumerate(zip(outputs, batch_outputs)):
+                        outputs[ix] = merge(output, batch_output)
+                else:
+                    outputs = merge(outputs, batch_outputs)
 
-        return outputs
+            return outputs
 
-    return wrapper
+        return wrapper
+
+    return _batchify
 
 
 @dataclass

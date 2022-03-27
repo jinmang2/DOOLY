@@ -9,7 +9,7 @@ from .base import batchify, DoolyTaskWithModelTokenzier
 
 class TextClassification(DoolyTaskWithModelTokenzier):
 
-    @batchify
+    @batchify("sentences1", "sentences2")
     @torch.no_grad()
     def predict_outputs(
         self,
