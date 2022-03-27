@@ -35,32 +35,35 @@ if is_notebook():
 else:
     from tqdm import tqdm
 
+
 # key: func_name, value: batch_args
 _COLUMN_NAME_USED_IN_BATCH = {}
 
 def batchify(*batch_args):
 
     def _batchify(func: Callable):
+        # Executed only when a function decorated with `batchify` is called
+        # for the first time
         func_name = func.__name__
         if func_name not in _COLUMN_NAME_USED_IN_BATCH:
             _COLUMN_NAME_USED_IN_BATCH[func_name] = list(batch_args)
-        batch_col_names = column_name_used_in_batch[func_name]
+        batch_col_names = _COLUMN_NAME_USED_IN_BATCH[func_name]
 
-        def merge(outputs, batch_outputs):
+        def merge(outputs, batch_outputs, padding_index: int = 0):
+            if isinstance(batch_outputs, torch.Tensor):
+                batch_outputs = batch_outputs.detach().cpu().numpy()
             if outputs is None:
                 return batch_outputs
             assert type(outputs) == type(batch_outputs)
             if isinstance(batch_outputs, list):
                 outputs += batch_outputs
-            elif isinstance(batch_outputs, dict):
-                outputs.update(batch_outputs)
             elif isinstance(batch_outputs, np.ndarray):
-                outputs = np.concatenate(outputs, batch_outputs, axis=0)
-            elif isinstance(batch_outputs, torch.Tensor):
-                outputs = torch.cat((outputs, batch_outputs), dim=0)
+                outputs = numpy_pad_and_concatenate(
+                    outputs, batch_outputs, padding_index=padding_index
+                )
             return outputs
 
-        # do not use arguments
+        # *args == (self,), **kwargs: function's keyword arguments
         def wrapper(*args, **kwargs):
             batch_size = kwargs.pop("batch_size", 1)
             verbose = kwargs.pop("verbose", True)
@@ -76,6 +79,9 @@ def batchify(*batch_args):
             batch_cols = Dataset.from_dict(batch_cols)
 
             outputs = None
+            padding_index = 0
+            if getattr(args[0], "tokenizer", None) is not None:
+                padding_index = args[0].tokenizer.pad_token_id
             for i in tqdm(range((n_samples - 1) // batch_size + 1), disable=not verbose):
                 cols = batch_cols[i * batch_size : (i + 1) * batch_size]
                 batch_outputs = func(*args, **cols, **kwargs)
@@ -83,9 +89,9 @@ def batchify(*batch_args):
                     if outputs is None:
                         outputs = [None] * len(batch_outputs)
                     for ix, (output, batch_output) in enumerate(zip(outputs, batch_outputs)):
-                        outputs[ix] = merge(output, batch_output)
+                        outputs[ix] = merge(output, batch_output, padding_index)
                 else:
-                    outputs = merge(outputs, batch_outputs)
+                    outputs = merge(outputs, batch_outputs, padding_index)
 
             return outputs
 
