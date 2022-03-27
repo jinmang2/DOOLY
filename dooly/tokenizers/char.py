@@ -56,7 +56,7 @@ class CharS2Tokenizer(Tokenizer):
         if self.sub_tokenizer.get(src_lang, None) is not None:
             sub_tokenizer = self.sub_tokenizer[src_lang]
             if hasattr(sub_tokenizer, "segment"):
-                tokenized = sub_tokenier.segment(text)
+                tokenized = sub_tokenizer.segment(text)
             elif hasattr(sub_tokenizer, "tokenize"):
                 tokenized = sub_tokenizer.tokenize(text, add_special_tokens=False)
             else:

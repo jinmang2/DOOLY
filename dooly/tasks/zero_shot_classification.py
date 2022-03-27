@@ -116,3 +116,9 @@ class ZeroShotClassification(NaturalLanguageInference):
             results = results[0]
 
         return results
+
+    def __repr__(self):
+        _repr = super().__repr__().split("\n")
+        category = f"[CATEGORY]: {self.__class__.__mro__[2].__name__}"
+        _repr[1] = category
+        return "\n".join(_repr)

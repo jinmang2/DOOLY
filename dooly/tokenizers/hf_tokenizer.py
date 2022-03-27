@@ -73,13 +73,17 @@ def build_custom_roberta_tokenizer(
 class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
 
     def segment(self, texts: InputTexts) -> TokenizedOutput:
+        if isinstance(texts, str):
+            texts = [texts]
         encodings = self.backend_tokenizer.encode_batch(
             texts,
             add_special_tokens=False,
         )
         results = []
         for text, encoding in zip(texts, encodings):
-            results.append(text, self._unk_to_raw_text(encoding))
+            results.append(self._unk_to_raw_text(text, encoding))
+        if len(results) == 1:
+            results = results[0]
         return results
 
     def _unk_to_raw_text(self, text: str, encoding: Encoding) -> List[str]:

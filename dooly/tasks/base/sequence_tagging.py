@@ -220,6 +220,9 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             return_tokens=True,
         )
 
+        if len(sentences) == 1:
+            tokens = [tokens]
+
         # Predict tags and ignore <s> & </s> tokens
         inputs = self._prepare_inputs(inputs)
         logits = self.model(**inputs).logits
@@ -252,8 +255,12 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             sentences,
             add_special_tokens=add_special_tokens,
             return_tokens=True,
+            return_tags=True,
         )
         tokens = tokens_with_pair[0]
+
+        if len(sentences) == 1:
+            tokens = [tokens]
 
         attention_mask = inputs["attention_mask"]
         sent_lengths = attention_mask.sum(-1).detach().cpu().numpy() - 2

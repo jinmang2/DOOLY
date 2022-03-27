@@ -2,6 +2,7 @@ import re
 from typing import Optional
 
 from .tasks import (
+    BackTranslationDA as BT,
     DependencyParsing as DP,
     MachineReadingComprehension as MRC,
     MachineTranslation as MT,
@@ -20,6 +21,7 @@ def add_task(names, task):
 
 
 DOOLY_HUB_CONTENTS = {}
+add_task(["bt", "back_translation", "bt_aug", "bt_da", "back_translation_aug", "back_translation_da"], BT)
 add_task(["dp", "dep_parse", "dependency_parsing"], DP)
 add_task(["mrc", "machine_reading_comprehension", "reading_comprehension"], MRC)
 add_task(["mt", "nmt", "translation", "machine_translation", "neural_machine_translation"], MT)

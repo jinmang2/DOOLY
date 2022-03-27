@@ -60,7 +60,7 @@ class NamedEntityRecognition(SequenceTagging):
     ):
         super().__init__(config=config)
 
-        use_sentence_tokenizer = "charbert" in n_model
+        use_sentence_tokenizer = "charbert" in config.n_model
         if use_sentence_tokenizer:
             tokenizer._set_sent_tokenizer()
 
@@ -388,9 +388,9 @@ class NamedEntityRecognition(SequenceTagging):
     ) -> Tuple: # overrides
         wsd_dict = {}
         if "charbert" in n_model:
-            f_wsd_dict = cls._build_misc(lang, n_model, misc_files, **dl_kwargs)
+            f_wsd_dict = cls._build_misc(lang, n_model, misc_files, **dl_kwargs)[0]
             wsd_dict = defaultdict(dict)
             for line in f_wsd_dict:
                 origin, target, word = line.strip().split("\t")
                 wsd_dict[origin][word] = target
-        return wsd_dict
+        return (wsd_dict,)

@@ -128,7 +128,6 @@ class DoolyTaskBase:
 
     def __repr__(self):
         task_info = f"[TASK]: {self.__class__.__name__}"
-        # -1 is object, -2 is DoolyTaskBase.
         category = f"[CATEGORY]: {self.__class__.__mro__[1].__name__}"
         lang_info = f"[LANG]: {self.lang}"
         device_info = f"[DEVICE]: {self.device}" if self.device else ""
@@ -291,6 +290,10 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
     def tokenizer(self):
         return self._tokenizer
 
+    @property
+    def device(self):
+        return self.model.device
+
     @staticmethod
     def build_tokenizer(task: str, lang: str, n_model: str, **kwargs):
         return DoolyTokenizer.build_tokenizer(task, lang, n_model, **kwargs)
@@ -329,6 +332,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
         add_special_tokens: bool = True,
         no_separator: bool = False,
         return_tokens: bool = False,
+        return_tags: bool = False,
     ):
         inputs = self.get_inputs(
             text=text,
@@ -337,6 +341,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
             tgt_lang=tgt_lang,
             add_special_tokens=add_special_tokens,
             no_separator=no_separator,
+            return_tags=return_tags,
         )
 
         outputs = (inputs,)
@@ -348,6 +353,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
                 tgt_lang=tgt_lang,
                 add_special_tokens=add_special_tokens,
                 no_separator=no_separator,
+                return_tags=return_tags,
             )
             outputs += (tokens,)
 
@@ -361,6 +367,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
         tgt_lang: Union[List[str], str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = False,
+        return_tags: bool = False,
     ):
         if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
             tokens = self.tokenizer(
@@ -369,7 +376,8 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
                 src_lang=src_lang,
                 tgt_lang=tgt_lang,
                 return_tokens=True,
-                add_special_tokens=False
+                add_special_tokens=False,
+                return_tags=return_tags,
             )
         else:
             # src_lang and tgt_lang must to be None
@@ -388,6 +396,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
         tgt_lang: Union[List[str], str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = False,
+        return_tags: bool = False,
     ):
         params = dict(
             return_tensors="pt",
@@ -401,6 +410,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
                     "src_lang": src_lang,
                     "tgt_lang": tgt_lang,
                     "no_separator": no_separator,
+                    "return_tags": return_tags,
                 }
             )
         inputs = self.tokenizer(text, text_pair, **params)

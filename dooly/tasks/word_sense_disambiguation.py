@@ -1,6 +1,7 @@
 from typing import List, Dict, Tuple, Union, Optional
 from collections import namedtuple
 
+import numpy as np
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from .base import DoolyTaskConfig, Seq2Seq
@@ -96,6 +97,8 @@ class WordSenseDisambiguation(Seq2Seq):
 
         results = []
         for output in generated:
+            if isinstance(output, np.ndarray):
+                output = output.tolist()
             decoded_text = self.tokenizer.decode(output, recover_original=False)
             results.append(self._postprocess(decoded_text))
 

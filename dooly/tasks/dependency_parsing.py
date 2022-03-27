@@ -71,6 +71,9 @@ class DependencyParsing(SequenceTagging):
             label = label[:sent_length]
             results.append(self._postprocess(sentence, token, head, label))
 
+        if len(sentences) == 1:
+            results = results[0]
+
         return results
 
     def _postprocess(

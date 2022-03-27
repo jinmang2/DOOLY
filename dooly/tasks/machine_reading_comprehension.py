@@ -75,6 +75,7 @@ class MachineReadingComprehension(SequenceTagging):
         tgt_lang: Union[List[str], str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = True,
+        **kwargs
     ): # overrides
         params = dict(
             # return_tensors="pt",

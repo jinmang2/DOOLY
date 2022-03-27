@@ -59,6 +59,7 @@ DoolyModelHub = {
         "ko": {"transformer.large": FSMTForConditionalGeneration}
     },
 }
+DoolyModelHub["bt"] = DoolyModelHub["mt"]
 DoolyModelHub["zero_topic"] = DoolyModelHub["nli"]
 available_tasks = list(DoolyModelHub.keys())
 

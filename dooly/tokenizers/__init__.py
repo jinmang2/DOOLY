@@ -52,6 +52,7 @@ DoolyTokenizerHub = {
         "ko": {"transformer.large": CharS2Tokenizer},
     },
 }
+DoolyTokenizerHub["bt"] = DoolyTokenizerHub["mt"]
 DoolyTokenizerHub["zero_topic"] = DoolyTokenizerHub["nli"]
 available_tasks = list(DoolyTokenizerHub.keys())
 

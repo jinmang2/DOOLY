@@ -32,6 +32,7 @@ ner = Dooly(task="ner", lang="ko")
 ```
 
 ## Support Tasks
+- Back Translation Data Augmentation
 - Dependency Parsing
 - Machine Reading Comprehension
 - Machine Translation
@@ -48,10 +49,15 @@ ner = Dooly(task="ner", lang="ko")
 - STS, Sentence Embedding
 - PG, Summarization
 - Retrieval(DPR)
+- convert + tester
+- github action - test_xxx.py
+
 
 ## Versions
 - v0.x.x의 목적: 일단 pororo의 모든 모듈을 dooly로 사용 가능하게 만든다
-- v1.x.x의 목적: hf datasets, pipeline을 활용하여 코드 가독성과 효율성을 늘린다
+- v1.x.x의 목적
+    - hf datasets, pipeline을 활용하여 코드 가독성과 효율성을 늘린다
+    - `len(...) == 1` 이런 코드 제거하기
 - v2.x.x: 계획 없음
 
 ## Reference

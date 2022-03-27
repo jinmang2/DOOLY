@@ -163,6 +163,14 @@ class MachineTranslation(Seq2Seq):
         if isinstance(sentences, str):
             sentences = [sentences]
 
+        if isinstance(src_langs, str):
+            src_langs = [src_langs] * len(sentences)
+        if isinstance(tgt_langs, str):
+            tgt_langs = [tgt_langs] * len(sentences)
+
+        assert len(sentences) == len(src_langs)
+        assert len(sentences) == len(tgt_langs)
+
         if do_sent_split:
             sentences, n_sents = self.tokenizer.sent_tokenize(sentences)
             sentences = [sentence for sents in sentences for sentence in sents]
@@ -197,6 +205,8 @@ class MachineTranslation(Seq2Seq):
             )
         else:
             decoded_text = self.tokenizer.decode(generated)
+            if isinstance(decoded_text, str):
+                decoded_text = [decoded_text]
 
         results = []
         ix = 0
@@ -211,3 +221,37 @@ class MachineTranslation(Seq2Seq):
             results = results[0]
 
         return results
+
+
+class BackTranslationDA(MachineTranslation):
+    """
+    Data Augmentation using Back-Translation.
+    {init_lang} -> {dest_lang} -> {init_lang}
+    """
+
+    def __call__(
+        self,
+        sentences: Union[List[str], str],
+        init_lang: str,
+        dest_lang: str,
+        **kwargs,
+    ):
+        translated = super().__call__(
+            sentences=sentences,
+            src_langs=init_lang,
+            tgt_langs=dest_lang,
+            **kwargs,
+        )
+        back_translated = super().__call__(
+            sentences=translated,
+            src_langs=dest_lang,
+            tgt_langs=init_lang,
+            **kwargs,
+        )
+        return back_translated
+
+    def __repr__(self):
+        _repr = super().__repr__().split("\n")
+        category = f"[CATEGORY]: {self.__class__.__mro__[2].__name__}"
+        _repr[1] = category
+        return "\n".join(_repr)
