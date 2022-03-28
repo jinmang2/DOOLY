@@ -1,12 +1,8 @@
 import os
+import sys
 import shutil
 import hashlib
 import importlib
-
-import os
-import sys
-from botocore import UNSIGNED
-from botocore.client import Config
 
 
 def is_available_boto3():
@@ -15,11 +11,12 @@ def is_available_boto3():
 
 if is_available_boto3():
     import boto3
+    from botocore import UNSIGNED
+    from botocore.client import Config
 else:
     raise ModuleNotFoundError(
         "Please install boto3 with: `pip install boto3`. "
     )
-
 
 
 class AwsS3Downloader(object):

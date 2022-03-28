@@ -3,8 +3,8 @@ import shutil
 import platform
 import torch
 from dataclasses import dataclass, asdict
-from dooly.models import FSMTConfig, FSMTForConditionalGeneration
-from dooly.models import (
+from ..models import FSMTConfig, FSMTForConditionalGeneration
+from ..models import (
     RobertaConfig,
     RobertaForDependencyParsing,
     RobertaForSpanPrediction,
@@ -15,14 +15,6 @@ from dooly.models import (
 
 def is_available_pororo():
     return importlib.util.find_spec("pororo")
-
-
-if is_available_pororo():
-    from pororo import Pororo
-else:
-    raise ModuleNotFoundError(
-        "Please install pororo with: `pip install pororo`. "
-    )
 
 
 pf = platform.system()
@@ -43,12 +35,20 @@ class TaskConfig:
     save_path: str
 
 
-class Converter:
+class DoolyConverter:
     subclasses = {}
 
     def __init__(self, config: TaskConfig):
         self.config = config
         self._pororo_save_path = PORORO_SAVE_DIR
+
+        if is_available_pororo():
+            from pororo import Pororo
+        else:
+            raise ModuleNotFoundError(
+                "Please install pororo with: `pip install pororo`. "
+            )
+
         self._pororo_model = Pororo(**asdict(config))._model
         self._hf_model = None
 
@@ -138,7 +138,7 @@ class Converter:
             )
 
 
-class FsmtConverter(Converter):
+class FsmtConverter(DoolyConverter):
 
     def load_vocab(self):
         return self._pororo_model.src_dict.indices
@@ -213,7 +213,7 @@ class FsmtConverter(Converter):
         return hf_model
 
 
-class RobertaConverter(Converter):
+class RobertaConverter(DoolyConverter):
     pororo_task_head_name = None
     hf_model_class = None
 

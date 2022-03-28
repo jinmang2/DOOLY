@@ -1,19 +1,21 @@
 import os
 import shutil
 from zipfile import ZipFile
-from dooly.tokenizers.hf_tokenizer import (
+
+from .base import DoolyConverter, FsmtConverter, RobertaConverter
+from .kobart_utils import download
+
+from ..tokenizers.hf_tokenizer import (
     convert_vocab_from_fairseq_to_hf,
     build_custom_roberta_tokenizer,
     PreTrainedTokenizerFast,
 )
-from dooly.models import (
+from ..models import (
     RobertaForCharNER,
     RobertaForDependencyParsing,
     RobertaForSpanPrediction,
     RobertaForSequenceClassification,
 )
-from .base import FsmtConverter, RobertaConverter
-from .kobart_utils import download
 
 
 class DpConverter(RobertaConverter):
@@ -118,7 +120,7 @@ class NliConverter(RobertaConverter):
         return config
 
 
-class QgConverter(Converter):
+class QgConverter(DoolyConverter):
     name = "qg"
 
     def get_kobart_tokenizer(self):
