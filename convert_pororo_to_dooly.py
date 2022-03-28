@@ -1,5 +1,7 @@
 import argparse
-from converters import is_available_pororo, TaskConfig, Converter
+from dooly import DoolyConverter
+from dooly.converters import is_available_pororo, TaskConfig
+
 
 if is_available_pororo():
     from pororo.pororo import SUPPORTED_TASKS
