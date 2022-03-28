@@ -54,7 +54,8 @@ class DoolyConverter:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.subclasses[cls.name] = cls
+        if hasattr(cls, "name"):
+            cls.subclasses[cls.name] = cls
 
     def convert(self):
         # convert vocab

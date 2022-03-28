@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 from zipfile import ZipFile
 
@@ -129,7 +130,7 @@ class QgConverter(DoolyConverter):
             chksum="cf74400bce",
             cachedir=self.save_path,
         )
-        cachedir_full = os.path.expanduser(cachedir)
+        cachedir_full = os.path.expanduser(self.save_path)
         if (
             not os.path.exists(os.path.join(cachedir_full, "emji_tokenizer"))
             or not is_cached
@@ -141,6 +142,20 @@ class QgConverter(DoolyConverter):
             zipf = ZipFile(os.path.expanduser(file_path))
             zipf.extractall(path=cachedir_full)
         tok_path = os.path.join(cachedir_full, "emji_tokenizer/model.json")
+
+        with open(tok_path, "r", encoding="utf-8") as f:
+            tok_model = json.load(f)
+
+        tok_model["post_processor"] = {
+            "type": "RobertaProcessing",
+            "sep": ["</s>",1],
+            "cls": ["<s>",0],
+            "trim_offsets": True,
+            "add_prefix_space": True
+        }
+
+        with open(tok_path, "w", encoding="utf-8") as f:
+            json.dump(tok_model, f, ensure_ascii=False)
 
         kobart_tokenizer = PreTrainedTokenizerFast(
             tokenizer_file=tok_path,
