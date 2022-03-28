@@ -274,7 +274,8 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
         heads = heads.argmax(dim=-1).detach().cpu().numpy()[:, 1:-1]
         labels = labels.argmax(dim=-1).detach().cpu().numpy()[:, 1:-1]
 
-        labelmap0 = np.vectorize(lambda x: self._label0[x + self.tokenizer.nspecial])
-        labelmap1 = np.vectorize(lambda x: self._label1[x + self.tokenizer.nspecial])
+        # out-of-index handling
+        labelmap0 = np.vectorize(lambda x: self._label0.get(x + self.tokenizer.nspecial, "-1"))
+        labelmap1 = np.vectorize(lambda x: self._label1.get(x + self.tokenizer.nspecial, "-1"))
 
         return tokens, labelmap0(heads), labelmap1(labels), sent_lengths
