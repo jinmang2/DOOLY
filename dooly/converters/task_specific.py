@@ -93,6 +93,89 @@ class NerConverter(RobertaConverter):
     pororo_task_head_name = "sequence_tagging_head"
     hf_model_class = RobertaForCharNER
 
+    def get_model_config(self, pororo_model):
+        config = super().get_model_config(pororo_model)
+        if self.lang == "ko":
+            config.id2label = {
+                0: "O", 1: "I-ORGANIZATION", 2: "I-CIVILIZATION", 3: "I-QUANTITY",
+                4: "I-DATE", 5: "B-CIVILIZATION", 6: "I-PERSON", 7: "I-LOCATION",
+                8: "B-ORGANIZATION", 9: "B-QUANTITY", 10: "I-ARTIFACT", 11: "B-PERSON",
+                12: "B-DATE", 13: "B-LOCATION", 14: "I-EVENT", 15: "I-TERM",
+                16: "B-ARTIFACT", 17: "B-TERM", 18: "I-TIME", 19: "B-EVENT",
+                20: "I-STUDY_FIELD", 21: "B-ANIMAL", 22: "I-THEORY", 23: "I-MATERIAL",
+                24: "B-TIME", 25: "I-ANIMAL", 26: "B-STUDY_FIELD", 27: "B-MATERIAL",
+                28: "B-THEORY", 29: "I-PLANT", 30: "B-PLANT"
+            }
+            config.label2id = {
+                "O": 0, "I-ORGANIZATION": 1, "I-CIVILIZATION": 2, "I-QUANTITY": 3,
+                "I-DATE": 4, "B-CIVILIZATION": 5, "I-PERSON": 6, "I-LOCATION": 7,
+                "B-ORGANIZATION": 8, "B-QUANTITY": 9, "I-ARTIFACT": 10, "B-PERSON": 11,
+                "B-DATE": 12, "B-LOCATION": 13, "I-EVENT": 14, "I-TERM": 15,
+                "B-ARTIFACT": 16, "B-TERM": 17, "I-TIME": 18, "B-EVENT": 19,
+                "I-STUDY_FIELD": 20, "B-ANIMAL": 21, "I-THEORY": 22, "I-MATERIAL": 23,
+                "B-TIME": 24, "I-ANIMAL": 25, "B-STUDY_FIELD": 26, "B-MATERIAL": 27,
+                "B-THEORY": 28, "I-PLANT": 29, "B-PLANT": 30
+                }
+        elif self.lang == "en":
+            config.id2label = {
+                0: "O", 1: "I-ORG", 2: "I-PERSON", 3: "I-DATE", 4: "I-GPE",
+                5: "B-ORG", 6: "B-GPE", 7: "B-PERSON", 8: "B-DATE", 9: "I-MONEY",
+                10: "B-CARDINAL", 11: "I-PERCENT", 12: "B-NORP", 13: "I-CARDINAL",
+                14: "B-MONEY", 15: "B-PERCENT", 16: "I-TIME", 17: "I-LOC",
+                18: "I-FAC", 19: "I-QUANTITY", 20: "I-NORP", 21: "I-EVENT",
+                22: "B-ORDINAL", 23: "I-PRODUCT", 24: "B-LOC", 25: "B-TIME",
+                26: "I-LAW", 27: "B-QUANTITY", 28: "B-FAC", 29: "B-PRODUCT",
+                30: "B-EVENT", 31: "I-ORDINAL", 32: "B-LAW", 33: "B-LANGUAGE",
+                34: "I-LANGUAGE"
+            }
+            config.label2id = {
+                "O": 0, "I-ORG": 1, "I-PERSON": 2, "I-DATE": 3, "I-GPE": 4,
+                "B-ORG": 5, "B-GPE": 6, "B-PERSON": 7, "B-DATE": 8, "I-MONEY": 9,
+                "B-CARDINAL": 10, "I-PERCENT": 11, "B-NORP": 12, "I-CARDINAL": 13,
+                "B-MONEY": 14, "B-PERCENT": 15, "I-TIME": 16, "I-LOC": 17,
+                "I-FAC": 18, "I-QUANTITY": 19, "I-NORP": 20, "I-EVENT": 21,
+                "B-ORDINAL": 22, "I-PRODUCT": 23, "B-LOC": 24, "B-TIME": 25,
+                "I-LAW": 26, "B-QUANTITY": 27, "B-FAC": 28, "B-PRODUCT": 29,
+                "B-EVENT": 30, "I-ORDINAL": 31, "B-LAW": 32, "B-LANGUAGE": 33,
+                "I-LANGUAGE": 34
+            }
+        elif self.lang == "ja":
+            config.id2label = {
+                0: "O", 1: "B-LOCATION", 2: "I-LOCATION", 3: "I-ARTIFACT",
+                4: "I-ORGANIZATION", 5: "I-DATE", 6: "B-DATE", 7: "I-PERSON",
+                8: "B-ORGANIZATION", 9: "B-ARTIFACT", 10: "B-PERSON",
+                11: "I-OPTIONAL", 12: "B-OPTIONAL", 13: "I-MONEY", 14: "I-PERCENT",
+                15: "B-MONEY", 16: "I-TIME", 17: "B-PERCENT", 18: "B-TIME"
+            }
+            config.label2id = {
+                "O": 0, "B-LOCATION": 1, "I-LOCATION": 2, "I-ARTIFACT": 3,
+                "I-ORGANIZATION": 4, "I-DATE": 5, "B-DATE": 6, "I-PERSON": 7,
+                "B-ORGANIZATION": 8, "B-ARTIFACT": 9, "B-PERSON": 10,
+                "I-OPTIONAL": 11, "B-OPTIONAL": 12, "I-MONEY": 13, "I-PERCENT": 14,
+                "B-MONEY": 15, "I-TIME": 16, "B-PERCENT": 17, "B-TIME": 18
+            }
+        elif self.lang == "zh":
+            config.id2label = {
+                0: "O", 1: "I-ORG", 2: "I-PERSON", 3: "I-GPE", 4: "I-DATE",
+                5: "B-GPE", 6: "B-PERSON", 7: "B-ORG", 8: "B-DATE", 9: "B-CARDINAL",
+                10: "I-MONEY", 11: "I-CARDINAL", 12: "I-EVENT", 13: "I-TIME",
+                14: "I-FAC", 15: "I-LOC", 16: "I-PERCENT", 17: "I-NORP", 18: "I-QUANTITY",
+                19: "B-LOC", 20: "B-NORP", 21: "B-TIME", 22: "I-LAW" ,23: "B-FAC",
+                24: "B-MONEY", 25: "I-ORDINAL", 26: "B-ORDINAL", 27: "B-EVENT",
+                28: "I-PRODUCT", 29: "B-QUANTITY", 30: "B-PERCENT", 31: "I-LANGUAGE",
+                32: "B-PRODUCT", 33: "B-LANGUAGE", 34: "B-LAW"
+            }
+            config.label2id = {
+                "O": 0, "I-ORG": 1, "I-PERSON": 2, "I-GPE": 3, "I-DATE": 4,
+                "B-GPE": 5, "B-PERSON": 6, "B-ORG": 7, "B-DATE": 8, "B-CARDINAL": 9,
+                "I-MONEY": 10, "I-CARDINAL": 11, "I-EVENT": 12, "I-TIME": 13,
+                "I-FAC": 14, "I-LOC": 15, "I-PERCENT": 16, "I-NORP": 17, "I-QUANTITY": 18,
+                "B-LOC": 19, "B-NORP": 20, "B-TIME": 21, "I-LAW": 22, "B-FAC": 23,
+                "B-MONEY": 24, "I-ORDINAL": 25, "B-ORDINAL": 26, "B-EVENT": 27,
+                "I-PRODUCT": 28, "B-QUANTITY": 29, "B-PERCENT": 30, "I-LANGUAGE": 31,
+                "B-PRODUCT": 32, "B-LANGUAGE": 33, "B-LAW": 34
+            }
+
     def get_misc_filenames(self):
         misc_files = []
         if self.lang == "ko":

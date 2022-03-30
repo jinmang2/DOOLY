@@ -57,6 +57,13 @@ class DoolyConverter:
         if hasattr(cls, "name"):
             cls.subclasses[cls.name] = cls
 
+    @classmethod
+    def load(cls, task: str, lang: str, n_model: str, save_path: str):
+        converter = self.subclasses.get(task, None)
+        assert converter is not None
+        config = TaskConfig(task=task, lang=lang, n_model=n_model, save_path=save_path)
+        return converter(config)
+
     def convert(self):
         # convert vocab
         self.load_and_save_vocab()

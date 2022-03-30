@@ -1,6 +1,6 @@
 import argparse
 from dooly import DoolyConverter
-from dooly.converters import is_available_pororo, TaskConfig
+from dooly.converters import is_available_pororo
 
 
 if is_available_pororo():
@@ -24,6 +24,7 @@ if __name__ == "__main__":
 
     pororo_factory = SUPPORTED_TASKS[args.task]
     for lang, n_model in pororo_factory.get_available_models():
-        config = TaskConfig(task=args.task, lang=lang, n_model=n_model, save_path=args.save_path)
-        converter = Converter.subclasses[args.task](config)
+        converter = Converter.load(
+            task=args.task, lang=lang, n_model=n_model, save_path=args.save_path
+        )
         converter.convert()
