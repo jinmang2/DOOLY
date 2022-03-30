@@ -51,6 +51,8 @@ class DpConverter(RobertaConverter):
         hf_model.classifier.head_attn_post.out_proj.weight = cls_head.head_attn_post.out_proj.weight
         hf_model.classifier.head_attn_post.out_proj.bias = cls_head.head_attn_post.out_proj.bias
 
+        return hf_model
+
 
 class MrcConverter(RobertaConverter):
     name = "mrc"
