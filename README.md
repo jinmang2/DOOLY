@@ -1,5 +1,5 @@
 # DOOLY 🦕
-PORORO는 kakaobrain에서 개발한 라이브러리로 nlp를 공부하는 이들에게 큰 도움이 되었습니다. 하지만 PORORO에는 아래 세 가지 단점이 존재합니다.
+PORORO에는 아래 세 가지 단점이 존재합니다.
 - 일부 task의 batch화 불가능
 - 내부 tokenize 과정 및 모듈 구조 확인이 어려움
 - fairseq dependency
