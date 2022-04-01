@@ -26,6 +26,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel pytest
           python -m pip install --upgrade  virtualenv
           python -m pip install -e .
+          python -m pip install coverage==4.3
 
       - name: Generate coverage report
         run: |
