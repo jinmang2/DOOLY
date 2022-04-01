@@ -5,12 +5,13 @@ import torch
 import torch.nn as nn
 
 from transformers.models.roberta.configuration_roberta import RobertaConfig
-from transformers.models.roberta.modeling_roberta import (
+from transformers.models.roberta.modeling_roberta import (  # noqa # pylint: disable=unused-import
     RobertaModel,
     RobertaPooler,
     RobertaEncoder,
     RobertaPreTrainedModel,
     RobertaForQuestionAnswering,
+    RobertaForSequenceClassification,
 )
 
 from .utils.modeling_heads import (

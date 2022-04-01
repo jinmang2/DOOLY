@@ -6,8 +6,8 @@ import platform
 import torch
 from collections import OrderedDict
 from dataclasses import dataclass
-from ..models import FSMTConfig, FSMTForConditionalGeneration
-from ..models import RobertaConfig
+from ..models.modeling_fsmt import FSMTConfig, FSMTForConditionalGeneration
+from ..models.modeling_roberta import RobertaConfig
 
 
 def is_available_pororo():

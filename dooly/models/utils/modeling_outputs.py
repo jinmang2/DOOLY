@@ -1,10 +1,10 @@
 import torch
 from typing import Optional, Tuple
 from dataclasses import dataclass
-from transformers.modeling_outputs import (
+from transformers.modeling_outputs import (  # noqa # pylint: disable=unused-import
     ModelOutput,
-    TokenClassifierOutput,  # noqa
-    BaseModelOutputWithPoolingAndCrossAttentions,  # noqa
+    TokenClassifierOutput,
+    BaseModelOutputWithPoolingAndCrossAttentions,
 )
 
 
