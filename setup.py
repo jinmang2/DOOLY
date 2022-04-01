@@ -46,6 +46,7 @@ _deps = [
     "boto3",
     "whoosh",
     "ipadic>=1.0.0,<2.0",
+    "tqdm>=4.27",
     "torch>=1.0",
     "tokenizers>=0.11.1,!=0.11.3",
     "transformers>=4.8.2",
