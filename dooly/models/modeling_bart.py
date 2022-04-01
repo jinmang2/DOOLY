@@ -1,1 +1,1 @@
-from transformers import BartForConditionalGeneration
+from transformers import BartForConditionalGeneration  # noqa

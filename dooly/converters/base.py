@@ -1,17 +1,13 @@
 import os
 import json
 import shutil
+import importlib
 import platform
 import torch
+from collections import OrderedDict
 from dataclasses import dataclass
 from ..models import FSMTConfig, FSMTForConditionalGeneration
-from ..models import (
-    RobertaConfig,
-    RobertaForDependencyParsing,
-    RobertaForSpanPrediction,
-    RobertaForSequenceTagging,
-    RobertaForSequenceClassification,
-)
+from ..models import RobertaConfig
 
 
 def is_available_pororo():
@@ -47,7 +43,7 @@ class DoolyConverter:
             from pororo import Pororo
         else:
             raise ModuleNotFoundError(
-                "Please install pororo with: `pip install pororo`. "
+                "Please install pororo with: `pip install pororo`."
             )
 
         args = dict(task=config.task, lang=config.lang, n_model=config.n_model)
@@ -61,7 +57,7 @@ class DoolyConverter:
 
     @classmethod
     def load(cls, task: str, lang: str, n_model: str, save_path: str):
-        converter = self.subclasses.get(task, None)
+        converter = cls.subclasses.get(task, None)
         assert converter is not None
         config = TaskConfig(task=task, lang=lang, n_model=n_model, save_path=save_path)
         return converter(config)
@@ -143,13 +139,11 @@ class DoolyConverter:
         misc_files = self.get_misc_filenames()
         for misc_file in misc_files:
             shutil.move(
-                src=os.path.join(self._pororo_save_path, misc_file),
-                dst=self.save_path
+                src=os.path.join(self._pororo_save_path, misc_file), dst=self.save_path
             )
 
 
 class FsmtConverter(DoolyConverter):
-
     def load_vocab(self):
         return self._pororo_model.src_dict.indices
 
@@ -182,7 +176,7 @@ class FsmtConverter(DoolyConverter):
             "pad_token_id": 1,
             "eos_token_id": 2,
             "is_encoder_decoder": True,
-            "scale_embedding": not mopororo_modeldel.args.no_scale_embedding,
+            "scale_embedding": not pororo_model.args.no_scale_embedding,
             "tie_word_embeddings": pororo_model.args.share_all_embeddings,
         }
         config["num_beams"] = 5
@@ -243,7 +237,8 @@ class RobertaConverter(DoolyConverter):
             layer_norm_eps=1e-5,  # PyTorch default used in fairseq
         )
         cls_heads = pororo_model.model.classification_heads
-        config.num_labels = cls_heads[self.pororo_task_head_name].out_proj.weight.shape[0]
+        task_name = self.pororo_task_head_name
+        config.num_labels = cls_heads[task_name].out_proj.weight.shape[0]
         return config
 
     def intialize_hf_model(self, config):
@@ -255,12 +250,18 @@ class RobertaConverter(DoolyConverter):
         sent_encoder = pororo_model.model.encoder.sentence_encoder
         # Now let's copy all the weights.
         # Embeddings
-        hf_model.roberta.embeddings.word_embeddings.weight = sent_encoder.embed_tokens.weight
-        hf_model.roberta.embeddings.position_embeddings.weight = sent_encoder.embed_positions.weight
-        hf_model.roberta.embeddings.token_type_embeddings.weight.data = torch.zeros_like(
-            hf_model.roberta.embeddings.token_type_embeddings.weight
-            )  # just zero them out b/c RoBERTa doesn't use them.
-        hf_model.roberta.embeddings.LayerNorm.weight = sent_encoder.emb_layer_norm.weight
+        hf_model.roberta.embeddings.word_embeddings.weight = (
+            sent_encoder.embed_tokens.weight
+        )
+        hf_model.roberta.embeddings.position_embeddings.weight = (
+            sent_encoder.embed_positions.weight
+        )
+        hf_model.roberta.embeddings.token_type_embeddings.weight.data = (
+            torch.zeros_like(hf_model.roberta.embeddings.token_type_embeddings.weight)
+        )  # just zero them out b/c RoBERTa doesn't use them.
+        hf_model.roberta.embeddings.LayerNorm.weight = (
+            sent_encoder.emb_layer_norm.weight
+        )
         hf_model.roberta.embeddings.LayerNorm.bias = sent_encoder.emb_layer_norm.bias
 
         for i in range(hf_model.config.num_hidden_layers):
@@ -274,7 +275,9 @@ class RobertaConverter(DoolyConverter):
                 roberta_layer.self_attn.k_proj.weight.data.shape
                 == roberta_layer.self_attn.q_proj.weight.data.shape
                 == roberta_layer.self_attn.v_proj.weight.data.shape
-                == torch.Size((hf_model.config.hidden_size, hf_model.config.hidden_size))
+                == torch.Size(
+                    (hf_model.config.hidden_size, hf_model.config.hidden_size)
+                )
             )
 
             self_attn.query.weight.data = roberta_layer.self_attn.q_proj.weight
@@ -286,7 +289,10 @@ class RobertaConverter(DoolyConverter):
 
             # self-attention output
             self_output = layer.attention.output
-            assert self_output.dense.weight.shape == roberta_layer.self_attn.out_proj.weight.shape
+            assert (
+                self_output.dense.weight.shape
+                == roberta_layer.self_attn.out_proj.weight.shape
+            )
             self_output.dense.weight = roberta_layer.self_attn.out_proj.weight
             self_output.dense.bias = roberta_layer.self_attn.out_proj.bias
             self_output.LayerNorm.weight = roberta_layer.self_attn_layer_norm.weight

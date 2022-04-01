@@ -33,7 +33,9 @@ class ClassificationHead(nn.Module):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         classifier_dropout = (
-            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
+            config.classifier_dropout
+            if config.classifier_dropout is not None
+            else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(p=classifier_dropout)
         self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
@@ -54,7 +56,9 @@ class DependencyParseHead(nn.Module):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         classifier_dropout = (
-            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
+            config.classifier_dropout
+            if config.classifier_dropout is not None
+            else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(p=classifier_dropout)
         self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
@@ -103,16 +107,16 @@ class SlotGenerator(nn.Module):
         self.embed = nn.Embedding(
             num_embeddings=self.vocab_size,
             embedding_dim=self.hidden_size,
-            padding_idx=self.pad_token_id
+            padding_idx=self.pad_token_id,
         )  # shared with encoder
 
         self.gru = nn.GRU(
             input_size=self.hidden_size,
             hidden_size=self.hidden_size,
-            batch_first=True
+            batch_first=True,
         )
 
-        self.gating2id = {"none": 0, "dontcare": 1, "ptr": 2, "yes":3, "no": 4}
+        self.gating2id = {"none": 0, "dontcare": 1, "ptr": 2, "yes": 3, "no": 4}
         self.id2gating = {v: k for k, v in self.gating2id.items()}
 
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
@@ -147,9 +151,9 @@ class SlotGenerator(nn.Module):
         max_len: int,
         teacher: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        assert self.slot_embed_idx is not None, (
-            "`slot_embed_idx` is required for forward pass. Use `set_slot_idx` method."
-        )
+        assert (
+            self.slot_embed_idx is not None
+        ), "`slot_embed_idx` is required for forward pass. Use `set_slot_idx` method."
 
         input_masks = input_masks.ne(1)
         # J, slot_meta : key : [domain, slot] ex> LongTensor([1,2])
@@ -161,8 +165,12 @@ class SlotGenerator(nn.Module):
         J = slot_e.size(0)
 
         if self.parallel_decoding:
-            all_point_outputs = torch.zeros(batch_size, J, max_len, self.vocab_size).to(input_ids.device)
-            all_gate_outputs = torch.zeros(batch_size, J, self.num_gates).to(input_ids.device)
+            all_point_outputs = torch.zeros(batch_size, J, max_len, self.vocab_size).to(
+                input_ids.device
+            )
+            all_gate_outputs = torch.zeros(batch_size, J, self.num_gates).to(
+                input_ids.device
+            )
 
             w = slot_e.repeat(batch_size, 1).unsqueeze(1)
             hidden = hidden.repeat_interleave(J, dim=1)
@@ -173,8 +181,12 @@ class SlotGenerator(nn.Module):
 
         else:
             # Seperate Decoding
-            all_point_outputs = torch.zeros(J, batch_size, max_len, self.vocab_size).to(input_ids.device)
-            all_gate_outputs = torch.zeros(J, batch_size, self.num_gates).to(input_ids.device)
+            all_point_outputs = torch.zeros(J, batch_size, max_len, self.vocab_size).to(
+                input_ids.device
+            )
+            all_gate_outputs = torch.zeros(J, batch_size, self.num_gates).to(
+                input_ids.device
+            )
             num_decoding = J
 
         for j in range(num_decoding):
@@ -193,12 +205,16 @@ class SlotGenerator(nn.Module):
                 attn_history = torch.nn.functional.softmax(attn_e, -1)  # B,T
 
                 # B,D * D,V => B,V
-                attn_v = torch.matmul(hidden.squeeze(0), self.embed.weight.transpose(0, 1))  # B,V
+                attn_v = torch.matmul(
+                    hidden.squeeze(0), self.embed.weight.transpose(0, 1)
+                )  # B,V
                 attn_vocab = torch.nn.functional.softmax(attn_v, -1)
 
                 # B,1,T * B,T,D => B,1,D
                 context = torch.bmm(attn_history.unsqueeze(1), encoder_output)  # B,1,D
-                p_gen = torch.sigmoid(self.w_gen(torch.cat([w, hidden.transpose(0, 1), context], -1)))  # B,1
+                p_gen = torch.sigmoid(
+                    self.w_gen(torch.cat([w, hidden.transpose(0, 1), context], -1))
+                )  # B,1
                 p_gen = p_gen.squeeze(-1)
 
                 p_context_ptr = torch.zeros_like(attn_vocab).to(input_ids.device)
@@ -217,13 +233,17 @@ class SlotGenerator(nn.Module):
                 if k == 0:
                     gated_logit = self.w_gate(context.squeeze(1))  # B,3
                     if self.parallel_decoding:
-                        all_gate_outputs = gated_logit.view(batch_size, J, self.num_gates)
+                        all_gate_outputs = gated_logit.view(
+                            batch_size, J, self.num_gates
+                        )
                     else:
                         _, gated = gated_logit.max(1)  # maybe `-1` would be more clear
                         all_gate_outputs[j] = gated_logit
 
                 if self.parallel_decoding:
-                    all_point_outputs[:, :, k, :] = p_final.view(batch_size, J, self.vocab_size)
+                    all_point_outputs[:, :, k, :] = p_final.view(
+                        batch_size, J, self.vocab_size
+                    )
                 else:
                     all_point_outputs[j, :, k, :] = p_final
 

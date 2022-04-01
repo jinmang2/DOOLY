@@ -1,11 +1,4 @@
-import abc
-import json
-import pickle
-import inspect
-import warnings
-from packaging import version
-from functools import partial
-from typing import Dict, Union, Optional, Tuple, List
+from typing import Dict, Union, Optional
 
 import torch
 
@@ -17,16 +10,22 @@ VOCAB_NAME = "vocab.json"
 CONFIG_NAME = "config.json"
 WEIGHTS_NAME = "pytorch_model.bin"
 
-TOKENIZER_USER_AGENT = {"file_type": "tokenizer",
-                        "from_auto_class": False,
-                        "is_fast": False,}
+TOKENIZER_USER_AGENT = {
+    "file_type": "tokenizer",
+    "from_auto_class": False,
+    "is_fast": False,
+}
 
-CONFIG_USER_AGENT = {"file_type": "config",
-                     "from_auto_class": False,}
+CONFIG_USER_AGENT = {
+    "file_type": "config",
+    "from_auto_class": False,
+}
 
-MODEL_USER_AGENT = {"file_type": "model",
-                    "framework": "pytorch",
-                    "from_auto_class": False,}
+MODEL_USER_AGENT = {
+    "file_type": "model",
+    "framework": "pytorch",
+    "from_auto_class": False,
+}
 
 # @TODO: cuda:0, 1, 2
 DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

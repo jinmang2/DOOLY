@@ -3,14 +3,12 @@ from typing import Union, List, Tuple, Dict
 
 import torch
 import numpy as np
-from transformers import PreTrainedTokenizerBase
 from transformers.modeling_outputs import ModelOutput
 
 from .base import batchify, DoolyTaskWithModelTokenzier
 
 
 class SequenceTagging(DoolyTaskWithModelTokenzier):
-
     def find_nbest_predictions(
         self,
         examples: List[str],
@@ -57,8 +55,8 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
                 # Update minimum null prediction
                 if (
-                    min_null_predictions is None or
-                    min_null_predictions["score"] > feature_null_score
+                    min_null_predictions is None
+                    or min_null_predictions["score"] > feature_null_score
                 ):
                     min_null_predictions = {
                         "offsets": (0, 0),
@@ -68,8 +66,12 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                     }
 
                 # Go through all possibles for the n_best_size greater start end end logits
-                start_indexes = np.argsort(start_logits)[-1 : -n_best_size - 1 : -1].tolist()
-                end_indexes = np.argsort(end_logits)[-1 : -n_best_size - 1 : -1].tolist()
+                start_indexes = np.argsort(start_logits)[
+                    -1 : -n_best_size - 1 : -1
+                ].tolist()  # noqa
+                end_indexes = np.argsort(end_logits)[
+                    -1 : -n_best_size - 1 : -1
+                ].tolist()  # noqa
                 for start_index in start_indexes:
                     for end_index in end_indexes:
                         # Don't consider out-of-scope answers!
@@ -83,12 +85,21 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                         ):
                             continue
                         # Don't consider answers with a length negative or > max_answer_length
-                        if end_index < start_index or end_index - start_index + 1 > max_answer_length:
+                        if (
+                            end_index < start_index
+                            or end_index - start_index + 1 > max_answer_length
+                        ):
                             continue
                         prelim_predictions.append(
                             {
-                                "offsets": (offset_mapping[start_index][0], offset_mapping[end_index][1]),
-                                "score": start_logits[start_index] + end_logits[end_index],
+                                "offsets": (
+                                    offset_mapping[start_index][0],
+                                    offset_mapping[end_index][1],
+                                ),
+                                "score": (
+                                    start_logits[start_index]
+                                    + end_logits[end_index]
+                                ),
                                 "start_logit": start_logits[start_index],
                                 "end_logit": end_logits[end_index],
                             }
@@ -100,10 +111,14 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                 null_score = min_null_predictions["score"]
 
             # Only keep the best `n_best_size` predictions
-            predictions = sorted(prelim_predictions, key=lambda x: x["score"], reverse=True)[:n_best_size]
+            predictions = sorted(
+                prelim_predictions, key=lambda x: x["score"], reverse=True
+            )[:n_best_size]
 
             # Add back the minimum null prediction if it was removed because of its low score
-            if version2_with_negative and not any(p["offsets"] == (0, 0) for p in predictions):
+            if version2_with_negative and not any(
+                p["offsets"] == (0, 0) for p in predictions
+            ):
                 predictions.append(min_null_predictions)
 
             # Use the offsets to gather the answer text in the original context
@@ -111,12 +126,23 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             for pred in predictions:
                 offsets = pred.pop("offsets")
                 pred["offsets"] = offsets
-                pred["text"] = context[offsets[0]:offsets[1]]
+                pred["text"] = context[offsets[0] : offsets[1]]
 
             # In the very rare edge case we have not a single non-null prediction
             # we create a fake predictions to avoid failure
-            if len(predictions) == 0 or (len(predictions) == 1 and predictions[0]["text"] == ""):
-                predictions.insert(0, dict(text="", offsets=(0, 0), start_logit=0.0, end_logit=0.0, score=0.0))
+            if len(predictions) == 0 or (
+                len(predictions) == 1 and predictions[0]["text"] == ""
+            ):
+                predictions.insert(
+                    0,
+                    dict(
+                        text="",
+                        offsets=(0, 0),
+                        start_logit=0.0,
+                        end_logit=0.0,
+                        score=0.0,
+                    ),
+                )
 
             # Compute the softmax of all scores
             # (we do it with numpy to stay independent from torch in this file,
@@ -139,13 +165,19 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                 try:
                     while predictions[i]["text"] == "":
                         i += 1
-                except:
+                except IndexError:
                     i = 0
                 best_non_null_pred = predictions[i]
 
                 # Then we compare to the null predictions using the threshold
-                score_diff = null_score - best_non_null_pred["start_logit"] - best_non_null_pred["end_logit"]
-                scores_diff_json[example_index] = float(score_diff) # To be JSON-serializable
+                score_diff = (
+                    null_score
+                    - best_non_null_pred["start_logit"]
+                    - best_non_null_pred["end_logit"]
+                )
+                scores_diff_json[example_index] = float(
+                    score_diff
+                )  # To be JSON-serializable
                 if score_diff > null_score_diff_threshold:
                     all_predictions[example_index] = ""
                 else:
@@ -153,7 +185,14 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
             # Make `predictions` JSON-serializable by casting np.float back to float
             all_nbest_json[example_index] = [
-                {k: (float(v) if isinstance(v, (np.float16, np.float32, np.float64)) else v) for k, v in pred.items()}
+                {
+                    k: (
+                        float(v)
+                        if isinstance(v, (np.float16, np.float32, np.float64))
+                        else v
+                    )
+                    for k, v in pred.items()
+                }
                 for pred in predictions
             ]
 
@@ -171,7 +210,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
         no_separator: bool = False,
     ) -> Tuple:
         # Tokenize and get input_ids
-        inputs, = self._preprocess(
+        (inputs,) = self._preprocess(
             text=question,
             text_pair=context,
             add_special_tokens=add_special_tokens,
@@ -209,7 +248,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
     def predict_tags(
         self,
         sentences: Union[List[str], str],
-        add_special_tokens: bool = True, # ENBERTa, JaBERTa, ZhBERTa에선 없음
+        add_special_tokens: bool = True,  # ENBERTa, JaBERTa, ZhBERTa에선 없음
         no_separator: bool = False,
     ):
         # Tokenize and get input_ids
@@ -231,14 +270,12 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
         results = logits.argmax(dim=-1).cpu().numpy()
 
         # Label mapping
-        labelmap = lambda x: self.model.config.id2label[x]
+        labelmap = lambda x: self.model.config.id2label[x]  # noqa
         labels = np.vectorize(labelmap)(results)
 
         token_label_pairs = [
-            [
-                (tok, l)
-                for tok, l in zip(sent, label)
-            ] for sent, label in zip(tokens, labels)
+            [(tok, l) for tok, l in zip(sent, label)]
+            for sent, label in zip(tokens, labels)
         ]
 
         return token_label_pairs
@@ -275,7 +312,11 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
         labels = labels.argmax(dim=-1).detach().cpu().numpy()[:, 1:-1]
 
         # out-of-index handling
-        labelmap0 = np.vectorize(lambda x: self._label0.get(x + self.tokenizer.nspecial, "-1"))
-        labelmap1 = np.vectorize(lambda x: self._label1.get(x + self.tokenizer.nspecial, "-1"))
+        labelmap0 = np.vectorize(
+            lambda x: self._label0.get(x + self.tokenizer.nspecial, "-1")
+        )
+        labelmap1 = np.vectorize(
+            lambda x: self._label1.get(x + self.tokenizer.nspecial, "-1")
+        )
 
         return tokens, labelmap0(heads), labelmap1(labels), sent_lengths

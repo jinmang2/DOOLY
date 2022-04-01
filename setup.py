@@ -52,7 +52,9 @@ _deps = [
     "transformers>=4.8.2",
 ]
 
-deps = {b: a for a, b in (re.findall(r"^(([^!=<>~]+)(?:[!=<>~].*)?$)", x)[0] for x in _deps)}
+deps = {
+    b: a for a, b in (re.findall(r"^(([^!=<>~]+)(?:[!=<>~].*)?$)", x)[0] for x in _deps)
+}
 
 
 def deps_list(*pkgs):
@@ -77,7 +79,8 @@ extras["all"] = (
 )
 
 install_requires = [
-    deps["dataclasses"] + ";python_version<'3.7'",  # dataclasses for Python versions that don't have it
+    deps["dataclasses"]
+    + ";python_version<'3.7'",  # dataclasses for Python versions that don't have it
     deps["filelock"],  # filesystem locks, e.g., to prevent parallel downloads
     deps["huggingface-hub"],
     deps["datasets"],
@@ -93,26 +96,27 @@ install_requires = [
 ]
 
 
-setup(name='dooly',
-      version=VERSION["version"],
-      url='https://github.com/jinmang2/DOOLY',
-      author='jinmang2',
-      author_email='jinmang2@gmail.com',
-      description='A library that handles everything with 🤗 and supports batching to models in PORORO',
-      python_requires=">=3.6.0",
-      packages=find_packages(exclude=['tests', 'convert_scripts']),
-      long_description=open('README.md', encoding="utf-8").read(),
-      long_description_content_type='text/markdown',
-      extras_require=extras,
-      install_requires=install_requires,
-      zip_safe=False,
-      classifiers=[
-          "Operating System :: OS Independent",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7",
-          "Programming Language :: Python :: 3.8",
-          "Programming Language :: Python :: 3.9",
-          "License :: OSI Approved :: Apache Software License",
-      ],
+setup(
+    name='dooly',
+    version=VERSION["version"],
+    url='https://github.com/jinmang2/DOOLY',
+    author='jinmang2',
+    author_email='jinmang2@gmail.com',
+    description='A library that handles everything with 🤗 and supports batching to models in PORORO',
+    python_requires=">=3.6.0",
+    packages=find_packages(exclude=['tests', 'convert_scripts']),
+    long_description=open('README.md', encoding="utf-8").read(),
+    long_description_content_type='text/markdown',
+    extras_require=extras,
+    install_requires=install_requires,
+    zip_safe=False,
+    classifiers=[
+      "Operating System :: OS Independent",
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3.6",
+      "Programming Language :: Python :: 3.7",
+      "Programming Language :: Python :: 3.8",
+      "Programming Language :: Python :: 3.9",
+      "License :: OSI Approved :: Apache Software License",
+    ],
 )

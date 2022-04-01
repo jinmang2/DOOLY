@@ -33,7 +33,7 @@ class ZeroShotClassification(NaturalLanguageInference):
 
     """
 
-    def finalize(self): # overrides
+    def finalize(self):  # overrides
         self._model.to(self.device)
         self._contra_label_name = "contradiction"
         self._entail_label_name = "entailment"
@@ -83,17 +83,14 @@ class ZeroShotClassification(NaturalLanguageInference):
 
         n_samples = len(sentences)
 
-        cands = [
-            self._templates[self.lang].format(label=label)
-            for label in labels
-        ]
+        cands = [self._templates[self.lang].format(label=label) for label in labels]
 
         # all_probs.shape == (n_samples, n_labels)
         all_probs = np.array([], dtype=np.float64).reshape(n_samples, 0)
         for cand in cands:
             probs = np.array([], dtype=np.float64)
             for i in range(n_samples // batch_size + 1):
-                sents = sentences[i * batch_size : (i + 1) * batch_size]
+                sents = sentences[i * batch_size : (i + 1) * batch_size]  # noqa
                 inputs = self._tokenizer(
                     sents,
                     [cand] * len(sents),
@@ -105,7 +102,9 @@ class ZeroShotClassification(NaturalLanguageInference):
                 logits = self._model(**inputs).logits
                 preds = logits[:, self.not_neutral_label_ids]
                 # Take the probability of "entailment" as the probability of the label being true
-                probs = np.hstack([probs, preds.softmax(dim=-1)[:, 1].detach().cpu().numpy()])
+                probs = np.hstack(
+                    [probs, preds.softmax(dim=-1)[:, 1].detach().cpu().numpy()]
+                )
             all_probs = np.hstack([all_probs, probs.reshape(-1, 1)])
 
         all_probs = (all_probs * 100).round(2)

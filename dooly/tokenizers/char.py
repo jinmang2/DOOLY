@@ -16,7 +16,7 @@ class CharS1Tokenizer(Tokenizer):
         tokenized = list()
         for i in range(len(x)):
             if x[i] == " ":
-                x[i+1] = f"▁{x[i+1]}"
+                x[i + 1] = f"▁{x[i+1]}"
                 continue
             else:
                 tokenized.append(x[i])
@@ -47,7 +47,7 @@ class CharS2Tokenizer(Tokenizer):
         tgt_lang: Optional[str] = None,
         add_special_tokens: bool = True,
         no_separator: bool = False,
-        **kwargs
+        **kwargs,
     ) -> List[str]:
         if (src_lang is None) ^ (tgt_lang is None):
             src_lang = tgt_lang = None

@@ -1,14 +1,11 @@
-from typing import Union, List
-
 import torch
 import numpy as np
-from transformers import PreTrainedTokenizerBase
+from typing import Union, List
 
 from .base import batchify, DoolyTaskWithModelTokenzier
 
 
 class TextClassification(DoolyTaskWithModelTokenzier):
-
     @batchify("sentences1", "sentences2")
     @torch.no_grad()
     def predict_outputs(
@@ -20,7 +17,7 @@ class TextClassification(DoolyTaskWithModelTokenzier):
         # show_probs: bool = False,
     ):
         # Tokenize and get input_ids
-        inputs, = self._preprocess(
+        (inputs,) = self._preprocess(
             text=sentences1,
             text_pair=sentences2,
             add_special_tokens=add_special_tokens,
@@ -33,7 +30,7 @@ class TextClassification(DoolyTaskWithModelTokenzier):
         results = logits.argmax(dim=-1).cpu().numpy()
 
         # Label mapping
-        labelmap = lambda x: self._model.config.id2label[x]
+        labelmap = lambda x: self._model.config.id2label[x]  # noqa
         labels = np.vectorize(labelmap)(results)
 
         # if show_probs:

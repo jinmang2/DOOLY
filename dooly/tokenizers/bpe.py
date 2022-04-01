@@ -1,5 +1,4 @@
-import json
-from typing import Dict, List, Set, Optional, Union
+from typing import Dict, List, Set, Union
 from functools import lru_cache
 
 import torch
@@ -17,6 +16,8 @@ Byte pair encoding utilities from GPT-2.
 Original source: https://github.com/openai/gpt-2/blob/master/src/encoder.py
 Original license: MIT
 """
+
+
 @lru_cache()
 def bytes_to_unicode():
     """
@@ -35,10 +36,10 @@ def bytes_to_unicode():
     )
     cs = bs[:]
     n = 0
-    for b in range(2**8):
+    for b in range(2 ** 8):
         if b not in bs:
             bs.append(b)
-            cs.append(2**8 + n)
+            cs.append(2 ** 8 + n)
             n += 1
     cs = [chr(n) for n in cs]
     return dict(zip(bs, cs))
@@ -99,7 +100,7 @@ class Encoder:
                     j = word.index(first, i)
                     new_word.extend(word[i:j])
                     i = j
-                except:
+                except:  # noqa
                     new_word.extend(word[i:])
                     break
 
@@ -145,7 +146,9 @@ class Gpt2BpeTokenizer(Tokenizer):
     def _build_bpe(self, lang: str, encoder_json: Dict = None, bpe_merges: Dict = None):
         self._bpe = Encoder(encoder_json, bpe_merges)
 
-    def __call__(self, *args, **kwargs) -> Union[TokenizedOutput, Dict[str, EncodedOutput]]:
+    def __call__(
+        self, *args, **kwargs
+    ) -> Union[TokenizedOutput, Dict[str, EncodedOutput]]:
         return_tokens = kwargs.pop("return_tokens", False)
         add_special_tokens = kwargs.pop("add_special_tokens", False)
 
@@ -153,8 +156,7 @@ class Gpt2BpeTokenizer(Tokenizer):
             add_special_tokens = False
 
         kwargs.update(
-            {"return_tokens": return_tokens,
-             "add_special_tokens": add_special_tokens}
+            {"return_tokens": return_tokens, "add_special_tokens": add_special_tokens}
         )
 
         outputs = self.encode(*args, **kwargs)
@@ -199,25 +201,26 @@ class Gpt2BpeTokenizer(Tokenizer):
 
 
 class BpeJaZhTokenizer(Tokenizer):
-
     def _build_bpe(self, lang: str, encoder_json: Dict = None, bpe_merges: Dict = None):
         if lang == "ja":
             try:
                 import ipadic  # noqa
             except ImportError:
-                raise ImportError(
-                    "Please install ipadic with: `pip install ipadic`")
+                raise ImportError("Please install ipadic with: `pip install ipadic`")
             try:
                 import fugashi  # noqa
             except ImportError:
-                raise ImportError(
-                    "Please install fugashi with: `pip install fugashi`")
+                raise ImportError("Please install fugashi with: `pip install fugashi`")
             from transformers import BertJapaneseTokenizer
+
             model_name_or_path = "cl-tohoku/bert-base-japanese-whole-word-masking"
             self._bpe = BertJapaneseTokenizer.from_pretrained(model_name_or_path)
         elif lang == "zh":
             from transformers import BertTokenizer
-            self._bpe = BertTokenizer.from_pretrained("bert-base-chinese", do_lower_case=True)
+
+            self._bpe = BertTokenizer.from_pretrained(
+                "bert-base-chinese", do_lower_case=True
+            )
 
     def _tokenize(self, text: str) -> List[str]:
         return self._bpe.tokenize(text)

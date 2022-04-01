@@ -1,7 +1,6 @@
 import json
-import inspect
 from functools import partial
-from typing import Dict, Union, Optional, Tuple, List, TypeVar
+from typing import Union, Optional
 
 from .base import Tokenizer
 from .bpe import Gpt2BpeTokenizer, BpeJaZhTokenizer
@@ -11,18 +10,20 @@ from .hf_tokenizer import (
     PreTrainedTokenizerFast,
     RobertaTokenizerFast,
 )
-from .pos_tagger import PosTagger, PosTaggerMap, PosTokenizer
+from .pos_tagger import (
+    PosDpTokenizer,
+)
 from ..build_utils import (
     download_from_hf_hub,
     HUB_NAME,
     VOCAB_NAME,
-    TOKENIZER_USER_AGENT
+    TOKENIZER_USER_AGENT,
 )
 
 
 DoolyTokenizerHub = {
     "dp": {
-        "ko": {"posbert.base": PosTokenizer},
+        "ko": {"posbert.base": PosDpTokenizer},
     },
     "mrc": {
         "ko": {"brainbert.base": RobertaTokenizerFast},
@@ -30,7 +31,7 @@ DoolyTokenizerHub = {
     "mt": {
         "multi": {
             "transformer.large.mtpg": CharS2Tokenizer,
-            "transformer.large.fast.mtpg": CharS2Tokenizer
+            "transformer.large.fast.mtpg": CharS2Tokenizer,
         },
     },
     "ner": {
@@ -60,10 +61,12 @@ available_tasks = list(DoolyTokenizerHub.keys())
 class DoolyTokenizer:
 
     @classmethod
-    def build_tokenizer(cls, task: str, lang: str, n_model: Optional[str] = None, **kwargs):
-        assert task in available_tasks, (
-            f"Task `{task}` is not available. See here {available_tasks}."
-        )
+    def build_tokenizer(
+        cls, task: str, lang: str, n_model: Optional[str] = None, **kwargs
+    ):
+        assert (
+            task in available_tasks
+        ), f"Task `{task}` is not available. See here {available_tasks}."
         available_langs = DoolyTokenizerHub[task]
         assert lang in available_langs, (
             f"Language `{lang}` is not available in this task {task}. "
@@ -148,8 +151,9 @@ class DoolyTokenizer:
                 vocab_bpe = _download_from_hf_hub(filename="vocab.bpe")
                 with open(vocab_bpe, "r", encoding="utf-8") as f:
                     bpe_data = f.read()
-                bpe_merges = [tuple(merge_str.split())
-                              for merge_str in bpe_data.split("\n")[1:-1]]
+                bpe_merges = [
+                    tuple(merge_str.split()) for merge_str in bpe_data.split("\n")[1:-1]
+                ]
 
             tokenizer._build_bpe(lang, encoder, bpe_merges)
 

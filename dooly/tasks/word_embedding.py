@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, Optional
+from typing import List, Dict
 from collections import OrderedDict
 
 from .base import DoolyTaskConfig, Miscellaneous
@@ -14,7 +14,8 @@ class WordEmbedding(Miscellaneous):
     Get vector or find similar word and entity from pretrained model using wikipedia
 
     See also:
-        Wikipedia2Vec: An Efficient Toolkit for Learning and Visualizing the Embeddings of Words and Entities from Wikipedia (https://arxiv.org/abs/1812.06280)
+        Wikipedia2Vec: An Efficient Toolkit for Learning and Visualizing the Embeddings of Words
+        and Entities from Wikipedia (https://arxiv.org/abs/1812.06280)
 
     Korean (`wikipedia2vec.ko`)
         - dataset: kowiki-20200720
@@ -43,6 +44,7 @@ class WordEmbedding(Miscellaneous):
         2. 'something' (other) : entity2vec result (hyperlink in wikipedia documents)
 
     """
+
     task: str = "word_embedding"
     available_langs: List[str] = ["ko", "en", "ja", "zh"]
     available_models: Dict[str, List[str]] = {
@@ -291,5 +293,4 @@ class WordEmbedding(Miscellaneous):
                                     headword2relatives,
                                 )
 
-        return self._postprocess(
-            headword2relatives) if group else headword2relatives
+        return self._postprocess(headword2relatives) if group else headword2relatives

@@ -1,7 +1,7 @@
 from typing import Dict, List, Union
 
 from .base import DoolyTaskConfig
-from ..tokenizers import PosTagger, PosTaggerMap
+from ..tokenizers.pos_tagger import PosTagger, PosTaggerMap
 
 
 class PosTagging:
@@ -31,6 +31,7 @@ class PosTagging:
         List[Tuple[str, str]]: list of token and its corresponding pos tag tuple
 
     """
+
     task: str = "pos"
     available_langs: List[str] = ["ko", "en", "ja", "zh"]
     available_models: Dict[str, List[str]] = {
@@ -40,11 +41,7 @@ class PosTagging:
         "zh": ["jieba"],
     }
 
-    def __init__(
-        self,
-        config: DoolyTaskConfig,
-        model: PosTagger
-    ):
+    def __init__(self, config: DoolyTaskConfig, model: PosTagger):
         self.config = config
         self.model = model
 
@@ -62,12 +59,7 @@ class PosTagging:
         return pos_results
 
     @classmethod
-    def build(
-        cls,
-        lang: str = None,
-        n_model: str = None,
-        **kwargs
-    ):
+    def build(cls, lang: str = None, n_model: str = None, **kwargs):
         if lang is None:
             lang = cls.available_lang[0]
         if lang not in cls.available_langs:
@@ -80,10 +72,7 @@ class PosTagging:
         model = PosTaggerMap[lang]()
 
         config = DoolyTaskConfig(
-            lang=lang,
-            n_model=n_model,
-            device="cpu",
-            misc_tuple=None
+            lang=lang, n_model=n_model, device="cpu", misc_tuple=None
         )
 
         return cls(config=config, model=model)

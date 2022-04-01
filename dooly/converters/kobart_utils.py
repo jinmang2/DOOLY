@@ -1,6 +1,5 @@
 import os
 import sys
-import shutil
 import hashlib
 import importlib
 
@@ -14,9 +13,7 @@ if is_available_boto3():
     from botocore import UNSIGNED
     from botocore.client import Config
 else:
-    raise ModuleNotFoundError(
-        "Please install boto3 with: `pip install boto3`. "
-    )
+    raise ModuleNotFoundError("Please install boto3 with: `pip install boto3`.")
 
 
 class AwsS3Downloader(object):
@@ -67,8 +64,8 @@ class AwsS3Downloader(object):
                 self.client.download_fileobj(bucket, key, f, Callback=progress)
             sys.stdout.write("\n")
             sys.stdout.flush()
-        except:
-            raise Exception(f"downloading file is failed. {url}")
+        except Exception as e:  # E722 do not use bare 'except'
+            print(f"Exception occured: {e}.\ndownloading file is failed. {url}")
         return file_path
 
 

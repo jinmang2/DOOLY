@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, Optional
+from typing import List, Dict, Union, Optional
 from collections import namedtuple
 
 import numpy as np
@@ -30,13 +30,14 @@ class WordSenseDisambiguation(Seq2Seq):
         List[Tuple[str, str]]: list of token and its disambiguated meaning tuple
 
     """
+
     task: str = "wsd"
     available_langs: List[str] = ["ko"]
     available_models: Dict[str, List[str]] = {
-        "ko": ["transformer.large"]
+        "ko": ["transformer.large"],
     }
     misc_files = {
-        "ko": ["morph2idx.ko.pkl", "tag2idx.ko.pkl", "wsd-dicts.ko.pkl"]
+        "ko": ["morph2idx.ko.pkl", "tag2idx.ko.pkl", "wsd-dicts.ko.pkl"],
     }
 
     def __init__(
@@ -50,13 +51,13 @@ class WordSenseDisambiguation(Seq2Seq):
         self._model = model
 
         self._cands = ["NNG", "NNB", "NNBC", "VV", "VA", "MM", "MAG", "NP", "NNP"]
-        self._morph2idx: Dict[str, int] = config.misc_tuple[0] # morpheme to index
-        self._tag2idx: Dict[str, int] = config.misc_tuple[1] # tag to index
+        self._morph2idx: Dict[str, int] = config.misc_tuple[0]  # morpheme to index
+        self._tag2idx: Dict[str, int] = config.misc_tuple[1]  # tag to index
 
         query2origin, query2meaning, query2eng, _ = config.misc_tuple[2]
-        self._query2origin: Dict[str, str] = query2origin # query to origin
-        self._query2meaning: Dict[str, str] = query2meaning # query to meaning
-        self._query2eng: Dict[str, str] = query2eng # query to english
+        self._query2origin: Dict[str, str] = query2origin  # query to origin
+        self._query2meaning: Dict[str, str] = query2meaning  # query to meaning
+        self._query2eng: Dict[str, str] = query2eng  # query to english
 
         self.finalize()
 

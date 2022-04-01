@@ -1,7 +1,7 @@
 import json
 from packaging import version
 from contextlib import contextmanager
-from typing import Dict, Union, Optional, Tuple, List, TypeVar
+from typing import Optional
 
 import torch
 
@@ -9,9 +9,8 @@ from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
 
 from .modeling_bart import BartForConditionalGeneration
-from .modeling_fsmt import FSMTConfig, FSMTForConditionalGeneration
+from .modeling_fsmt import FSMTForConditionalGeneration
 from .modeling_roberta import (
-    RobertaConfig,
     RobertaForDependencyParsing,
     RobertaForSpanPrediction,
     RobertaForSequenceTagging,
@@ -23,7 +22,7 @@ from ..build_utils import (
     HUB_NAME,
     MODEL_USER_AGENT,
     CONFIG_NAME,
-    WEIGHTS_NAME
+    WEIGHTS_NAME,
 )
 
 
@@ -56,7 +55,7 @@ DoolyModelHub = {
         "ko": {"kobart.base": BartForConditionalGeneration},
     },
     "wsd": {
-        "ko": {"transformer.large": FSMTForConditionalGeneration}
+        "ko": {"transformer.large": FSMTForConditionalGeneration},
     },
 }
 DoolyModelHub["bt"] = DoolyModelHub["mt"]
@@ -81,9 +80,9 @@ class DoolyModel:
 
     @classmethod
     def build_model(cls, task: str, lang: str, n_model: str, **kwargs):
-        assert task in available_tasks, (
-            f"Task `{task}` is not available. See here {available_tasks}."
-        )
+        assert (
+            task in available_tasks
+        ), f"Task `{task}` is not available. See here {available_tasks}."
         available_langs = DoolyModelHub[task]
         assert lang in available_langs, (
             f"Language `{lang}` is not available in this task {task}. "
@@ -182,7 +181,7 @@ class DoolyModel:
 
         if low_cpu_mem_usage:
             loaded_state_dict_keys = [k for k in state_dict.keys()]
-            del state_dict # free CPU memory - will reload again later
+            del state_dict  # free CPU memory - will reload again later
 
         with no_init_weights(_enable=_fast_init):
             model = model_class(config, **kwargs)

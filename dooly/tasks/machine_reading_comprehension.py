@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, Callable
+from typing import List, Dict, Union, Callable
 
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
@@ -25,6 +25,7 @@ class MachineReadingComprehension(SequenceTagging):
         Tuple[str, Tuple[int, int]]: predicted answer span and its indices
 
     """
+
     task: str = "mrc"
     available_langs: List[str] = ["ko"]
     available_models: Dict[str, List[str]] = {
@@ -44,6 +45,7 @@ class MachineReadingComprehension(SequenceTagging):
 
         try:
             import os
+
             if os.name == "nt":
                 from eunjeon import Mecab
             else:
@@ -76,28 +78,30 @@ class MachineReadingComprehension(SequenceTagging):
         add_special_tokens: bool = True,
         no_separator: bool = True,
         **kwargs
-    ): # overrides
+    ):  # overrides
         params = dict(
             # return_tensors="pt",
             add_special_tokens=add_special_tokens,
         )
         if not issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):
-        #     params.update(dict(no_separator=no_separator))
-        #     inputs = self.tokenizer(text, text_pair, **params)
-        #     # Only support text: List[str]
-        #     for k, v in inputs.items():
-        #         inputs[k] = v[:, :self.model.config.max_position_embeddings]
-        #     inputs["example_id"] = list(range(len(text)) if isinstance(text, list) else 1)
-        # else:
+            #     params.update(dict(no_separator=no_separator))
+            #     inputs = self.tokenizer(text, text_pair, **params)
+            #     # Only support text: List[str]
+            #     for k, v in inputs.items():
+            #         inputs[k] = v[:, :self.model.config.max_position_embeddings]
+            #     inputs["example_id"] = list(range(len(text)) if isinstance(text, list) else 1)
+            # else:
             raise AttributeError
         pad_on_right = self.tokenizer.padding_side == "right"
-        params.update(dict(
-            truncation="only_second" if pad_on_right else "only_first",
-            max_length=self.model.config.max_position_embeddings-2,
-            stride=self.doc_stride,
-            return_overflowing_tokens=True,
-            return_offsets_mapping=True,
-        ))
+        params.update(
+            dict(
+                truncation="only_second" if pad_on_right else "only_first",
+                max_length=self.model.config.max_position_embeddings-2,
+                stride=self.doc_stride,
+                return_overflowing_tokens=True,
+                return_offsets_mapping=True,
+            )
+        )
         inputs = self.tokenizer(text, text_pair, **params)
         # Since one example might give us several features if it has a long context,
         # we need a map from a feature to its corresponding example.
@@ -109,9 +113,6 @@ class MachineReadingComprehension(SequenceTagging):
         inputs["example_id"] = []
 
         for i, input_ids in enumerate(inputs["input_ids"]):
-            # Find the CLS token in the input_ids
-            cls_index = input_ids.index(self.tokenizer.cls_token_id)
-
             # Grab the sequence corresponding to that example
             # (to know what is the context and what is the question)
             sequence_ids = inputs.sequence_ids(i)
@@ -194,7 +195,7 @@ class MachineReadingComprehension(SequenceTagging):
     def _postprocess(tagger, text: str) -> str:
         assert hasattr(tagger, "pos")
         # First, strip punctuations
-        text = text.strip("""!"\#$&'()*+,\-./:;<=>?@\^_‘{|}~《》""")
+        text = text.strip("""!"\#$&'()*+,\-./:;<=>?@\^_‘{|}~《》""")  # noqa
 
         # Complete imbalanced parentheses pair
         if text.count("(") == text.count(")") + 1:

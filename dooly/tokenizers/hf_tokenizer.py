@@ -1,7 +1,6 @@
-from typing import List, Union, Optional
+from typing import List, Optional
 from tokenizers import Encoding
 from transformers import RobertaTokenizerFast as _RobertaTokenizerFast
-from transformers import PreTrainedTokenizerBase
 from transformers import PreTrainedTokenizerFast as _PreTrainedTokenizerFast
 
 from .base import InputTexts, TokenizedOutput, SentTokenizeMixin
@@ -12,6 +11,7 @@ def convert_vocab_from_fairseq_to_hf(vocab_path):
     # Dictionary(...).indices로 접근하면 아래 과정을 거칠 필요가 없음
     # 원본 vocab.json을 처리하는 방법
     import json
+
     with open(vocab_path, "r", encoding="utf-8") as f:
         vocab = json.load(f)
     new_vocab = {"<pad>": 1, "<mask>": len(vocab) + 1}
@@ -69,9 +69,9 @@ def build_custom_roberta_tokenizer(
 
 # To match the class name to avoid warning statements
 # when `config_tokenizer_class` is not None.
-# See here: https://github.com/huggingface/transformers/blob/133c5e40c4c34b54180f1f0f48791bece45f4418/src/transformers/tokenization_utils_base.py#L1825
+# See here: transformers 133c5e40
+# ./src/transformers/tokenization_utils_base.py#L1825
 class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
-
     def segment(self, texts: InputTexts) -> TokenizedOutput:
         if isinstance(texts, str):
             texts = [texts]

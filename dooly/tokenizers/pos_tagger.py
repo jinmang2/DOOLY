@@ -2,7 +2,8 @@ import re
 import os
 import abc
 import importlib
-from typing import List, Tuple, Union, Dict, Set, Callable, Optional
+from copy import deepcopy
+from typing import List, Tuple, Union, Dict
 
 import torch
 
@@ -44,7 +45,6 @@ def is_available_nltk():
 
 
 class PosTagger:
-
     @property
     def tagger(self):
         return self._tagger
@@ -55,13 +55,12 @@ class PosTagger:
 
 
 class MecabKoPosTagger(PosTagger):
-
     def __init__(self):
         if is_available_mecab():
             if os.name == "nt":
                 try:
                     from mecab import Mecab
-                except:
+                except ImportError:
                     from eunjeon import Mecab
             else:
                 from mecab import Mecab
@@ -133,9 +132,7 @@ class MecabKoPosTagger(PosTagger):
 
         if analysis and ("+" in analysis):
             if "*" in analysis:
-                token = [
-                    morph.rsplit("/", 1)[0] for morph in analysis.split("+")
-                ]
+                token = [morph.rsplit("/", 1)[0] for morph in analysis.split("+")]
                 token = [(t.split("/")[0], t.split("/")[1]) for t in token]
             else:
                 analysis = analysis.replace("+/", "[PLUS]/")
@@ -152,7 +149,6 @@ class MecabKoPosTagger(PosTagger):
 
 
 class NltkEnPostTagger(PosTagger):
-
     def __init__(self):
         if is_available_nltk():
             import nltk
@@ -168,9 +164,7 @@ class NltkEnPostTagger(PosTagger):
                 nltk.download("averaged_perceptron_tagger")
 
         else:
-            raise ModuleNotFoundError(
-                "Please install fugashi with: `pip install nltk`"
-            )
+            raise ModuleNotFoundError("Please install fugashi with: `pip install nltk`")
 
         self._tagger = nltk
 
@@ -182,7 +176,7 @@ class NltkEnPostTagger(PosTagger):
 
     def _clean(self, sent: str) -> str:
         sent = sent.strip()
-        sent = re.sub("\s", " ", sent)
+        sent = re.sub("\s", " ", sent)  # noqa
         sent = re.sub(" +", " ", sent)
         return sent
 
@@ -203,11 +197,11 @@ class NltkEnPostTagger(PosTagger):
                 token = ("…", "…")
 
             if sent.startswith(f"{word} "):
-                sent = sent[len(f"{word} "):]
+                sent = sent[len(f"{word} ") :]
                 result.append(token)
                 result.append((" ", "SPACE"))
             elif sent.startswith(word):
-                sent = sent[len(word):]
+                sent = sent[len(word) :]
                 result.append(token)
             else:
                 raise ValueError(f"Can't align the {token} to {sent}")
@@ -219,7 +213,6 @@ class NltkEnPostTagger(PosTagger):
 
 
 class MecabJaPosTagger(PosTagger):
-
     def __init__(self):
         if is_available_fugashi():
             import fugashi
@@ -255,15 +248,12 @@ class MecabJaPosTagger(PosTagger):
 
 
 class JiebaZhPosTagger(PosTagger):
-
     def __init__(self):
         if is_available_jieba():
             import jieba
             import jieba.posseq
         else:
-            raise ModuleNotFoundError(
-                "Please install jieba with: `pip install jieba`"
-            )
+            raise ModuleNotFoundError("Please install jieba with: `pip install jieba`")
 
         self._tagger = jieba.posseq
 
@@ -280,8 +270,7 @@ PosTaggerMap = {
 }
 
 
-class PosTokenizer(Tokenizer):
-
+class PosDpTokenizer(Tokenizer):
     def __init__(self, *args, **kwargs):
         pos_vocab: Dict[str, int] = kwargs.pop("pos_vocab", None)
 
@@ -310,10 +299,7 @@ class PosTokenizer(Tokenizer):
         res_tags = []
         for tag in tags:
             if "+" in tag:
-                tag = tag[:tag.find("+")]
+                tag = tag[: tag.find("+")]
             res_tags.append(tag)
 
         return tokens, res_tags
-
-    def decode(ids, **kwargs):
-        raise NotImplementedError

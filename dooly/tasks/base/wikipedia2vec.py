@@ -22,6 +22,10 @@ def is_available_whoosh():
     return importlib.util.find_spec("whoosh")
 
 
+def is_available_joblib():
+    return importlib.util.find_spec("joblib")
+
+
 if is_available_whoosh():
     from whoosh.qparser import QueryParser
     from whoosh import index as WhooshIndex
@@ -111,8 +115,8 @@ class Wikipedia2VecDict(object):
         self._word_dict = word_dict
         self._entity_dict = entity_dict
         self._redirect_dict = redirect_dict
-        self._word_stats = word_stats[:len(self._word_dict)]
-        self._entity_stats = entity_stats[:len(self._entity_dict)]
+        self._word_stats = word_stats[: len(self._word_dict)]
+        self._entity_stats = entity_stats[: len(self._entity_dict)]
         self.min_paragraph_len = min_paragraph_len
         self.uuid = uuid
         self.language = language
@@ -223,9 +227,9 @@ class Wikipedia2VecDict(object):
                 "Please install marisa trie with: `pip install marisa_trie`."
             )
 
-        try:
+        if is_available_joblib():
             import joblib
-        except:
+        else:
             raise ModuleNotFoundError(
                 "Please install joblib with: `pip install joblib`."
             )
@@ -277,7 +281,6 @@ class Wikipedia2VecDict(object):
 
 
 class Wikipedia2Vec(object):
-
     def __init__(self, model_file, device):
         """
         Torch Wikipedia2Vec Wrapper class for word embedding task
@@ -291,8 +294,8 @@ class Wikipedia2Vec(object):
                 device,
             )
         else:
-            self.dictionary = model_object[
-                "dictionary"]  # for backward compatibilit
+            # for backward compatibilit
+            self.dictionary = model_object["dictionary"]
 
         self.syn0 = torch.tensor(
             model_object["syn0"],
@@ -346,31 +349,35 @@ class Wikipedia2Vec(object):
         if min_count is None:
             min_count = 0
 
-        counts = torch.cat([
-            torch.tensor(
-                self.dictionary._word_stats[:, 0],
-                device=self.device,
-                requires_grad=False,
-            ),
-            torch.tensor(
-                self.dictionary._entity_stats[:, 0],
-                device=self.device,
-                requires_grad=False,
-            ),
-        ])
+        counts = torch.cat(
+            [
+                torch.tensor(
+                    self.dictionary._word_stats[:, 0],
+                    device=self.device,
+                    requires_grad=False,
+                ),
+                torch.tensor(
+                    self.dictionary._entity_stats[:, 0],
+                    device=self.device,
+                    requires_grad=False,
+                ),
+            ]
+        )
 
         dst = self.syn0 @ vec / torch.norm(self.syn0, dim=1) / torch.norm(vec)
         dst[counts < min_count] = -100
         indexes = torch.argsort(-dst)
 
-        return [(
-            self.dictionary.get_item_by_index(ind),
-            dst[ind],
-        ) for ind in indexes[:count]]
+        return [
+            (
+                self.dictionary.get_item_by_index(ind),
+                dst[ind],
+            )
+            for ind in indexes[:count]
+        ]
 
 
 class SimilarWords:
-
     def __init__(self, model, idx):
         self._wikipedia2vec = model
         self._ix = idx

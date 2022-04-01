@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Union
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from .base import DoolyTaskConfig, SequenceTagging
@@ -23,6 +23,7 @@ class DependencyParsing(SequenceTagging):
         List[Tuple[int, str, int, str]]: token index, token label, token head and its relation
 
     """
+
     task: str = "dp"
     available_langs: List[str] = ["ko"]
     available_models: Dict[str, List[str]] = {
@@ -67,7 +68,7 @@ class DependencyParsing(SequenceTagging):
         results = []
         iterator = zip(sentences, tokens, heads, labels, sent_lengths)
         for sentence, token, head, label, sent_length in iterator:
-            head = [int(h)-1 for h in head][:sent_length] # due to default <s> token
+            head = [int(h)-1 for h in head][:sent_length]  # due to default <s> token
             label = label[:sent_length]
             results.append(self._postprocess(sentence, token, head, label))
 
@@ -108,7 +109,7 @@ class DependencyParsing(SequenceTagging):
 
             try:
                 head_eojeol = indices.index(head) + 1
-            except:
+            except ValueError:  # E722 do not use bare 'except'
                 head_eojeol = -1
 
             if head_eojeol == curr:

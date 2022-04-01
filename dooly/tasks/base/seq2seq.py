@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple, Dict, Optional
+from typing import Union, List, Optional
 
 import torch
 
@@ -6,7 +6,6 @@ from .base import batchify, DoolyTaskWithModelTokenzier
 
 
 class Seq2Seq(DoolyTaskWithModelTokenzier):
-
     @batchify("text", "src_lang", "tgt_lang")
     @torch.no_grad()
     def generate(
@@ -26,7 +25,7 @@ class Seq2Seq(DoolyTaskWithModelTokenzier):
         **kwargs,
     ):
         # Tokenize and get input_ids
-        inputs, = self._preprocess(
+        (inputs,) = self._preprocess(
             text=text,
             src_lang=src_lang,
             tgt_lang=tgt_lang,

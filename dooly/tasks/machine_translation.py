@@ -1,6 +1,6 @@
-from typing import List, Dict, Tuple, Union, Callable, Optional
+from typing import List, Dict, Union, Optional
 
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
+from transformers import PreTrainedModel
 
 from .base import DoolyTaskConfig, Seq2Seq
 from ..tokenizers import Tokenizer as _Tokenizer
@@ -97,6 +97,7 @@ class MachineTranslation(Seq2Seq):
         str: machine translated sentence
 
     """
+
     task: str = "mt"
     available_langs: List[str] = ["multi"]
     available_models: Dict[str, List[str]] = {
@@ -136,7 +137,7 @@ class MachineTranslation(Seq2Seq):
                     subfolder=f"{self.task}/{self.lang}/{self.n_model}/{lang}",
                 )
                 self._tokenizer._set_sub_tokenizer(lang, subtok)
-            except:
+            except (ValueError, EnvironmentError, OSError) as e:
                 continue
 
         self.finalize()
@@ -194,7 +195,7 @@ class MachineTranslation(Seq2Seq):
             length_penalty=length_penalty,
             batch_size=batch_size,
             verbose=verbose,
-            **kwargs
+            **kwargs,
         )
 
         if issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):

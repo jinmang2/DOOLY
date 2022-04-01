@@ -1,11 +1,11 @@
 import torch
 
-# loss_gen
+
 def masked_cross_entropy_for_value(
     logits: torch.Tensor,
     target: torch.Tensor,
-    pad_idx: int = 0
-) -> torch.Tensor:
+    pad_idx: int = 0,
+) -> torch.Tensor:  # loss_gen
     mask = target.ne(pad_idx)
     logits_flat = logits.view(-1, logits.size(-1))
     log_probs_flat = torch.log(logits_flat)

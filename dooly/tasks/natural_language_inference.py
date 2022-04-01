@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Union
 
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
@@ -36,6 +36,7 @@ class NaturalLanguageInference(TextClassification):
         str: predicted NLI label - Neutral, Entailment, or Contradiction
 
     """
+
     task: str = "nli"
     available_langs: List[str] = ["ko", "en", "ja", "zh"]
     available_models: Dict[str, List[str]] = {

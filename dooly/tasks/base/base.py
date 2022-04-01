@@ -5,15 +5,16 @@ import pickle
 import zipfile
 import inspect
 from dataclasses import dataclass
-from typing import Dict, Union, Optional, Tuple, List, TypeVar, Any, Callable
+from typing import Dict, Union, Optional, Tuple, List, Any, Callable
 
 import numpy as np
 import torch
 from datasets import Dataset
 from transformers import PreTrainedTokenizerBase
+from transformers.trainer_pt_utils import numpy_pad_and_concatenate
 
 from ...build_utils import download_from_hf_hub, HUB_NAME, DEFAULT_DEVICE
-from ...tokenizers import Tokenizer, DoolyTokenizer
+from ...tokenizers import DoolyTokenizer
 from ...models import DoolyModel
 
 
@@ -21,13 +22,13 @@ def is_notebook():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
+            return True  # Jupyter notebook or qtconsole
         elif shell == 'TerminalInteractiveShell':
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
     except NameError:
-        return False      # Probably standard Python interpreter
+        return False  # Probably standard Python interpreter
 
 
 if is_notebook():
@@ -38,6 +39,7 @@ else:
 
 # key: func_name, value: batch_args
 _COLUMN_NAME_USED_IN_BATCH = {}
+
 
 def batchify(*batch_args):
 
@@ -72,23 +74,28 @@ def batchify(*batch_args):
             for i, col_name in enumerate(batch_col_names):
                 col = kwargs.pop(col_name, None)
                 if i == 0:
-                    n_samples = len(col) # since list
+                    n_samples = len(col)  # since list
                 if col is None:
                     continue
                 batch_cols.update({col_name: col})
             batch_cols = Dataset.from_dict(batch_cols)
 
-            outputs = None
             padding_index = 0
             if getattr(args[0], "tokenizer", None) is not None:
                 padding_index = args[0].tokenizer.pad_token_id
-            for i in tqdm(range((n_samples - 1) // batch_size + 1), disable=not verbose):
-                cols = batch_cols[i * batch_size : (i + 1) * batch_size]
+
+            outputs = None
+            for i in tqdm(
+                range((n_samples - 1) // batch_size + 1), disable=not verbose
+            ):
+                cols = batch_cols[i * batch_size : (i + 1) * batch_size] # noqa
                 batch_outputs = func(*args, **cols, **kwargs)
                 if isinstance(batch_outputs, tuple):
                     if outputs is None:
                         outputs = [None] * len(batch_outputs)
-                    for ix, (output, batch_output) in enumerate(zip(outputs, batch_outputs)):
+                    for ix, (output, batch_output) in enumerate(
+                        zip(outputs, batch_outputs)
+                    ):
                         outputs[ix] = merge(output, batch_output, padding_index)
                 else:
                     outputs = merge(outputs, batch_outputs, padding_index)
@@ -109,7 +116,6 @@ class DoolyTaskConfig:
 
 
 class DoolyTaskBase:
-
     def __init__(self, config: DoolyTaskConfig):
         self.config = config
         self._model = None
@@ -153,7 +159,7 @@ class DoolyTaskBase:
         n_model: str = None,
         tok_kwargs: Dict = {},
         model_kwargs: Dict = {},
-        **kwargs
+        **kwargs,
     ):
         lang, n_model = cls._check_validate_input(lang, n_model)
 
@@ -168,14 +174,18 @@ class DoolyTaskBase:
         dl_kwargs["resume_download"] = kwargs.pop("resume_download", False)
 
         # set tokenizer
-        tokenizer = cls.build_tokenizer(cls.task, lang, n_model, **dl_kwargs, **tok_kwargs)
+        tokenizer = cls.build_tokenizer(
+            cls.task, lang, n_model, **dl_kwargs, **tok_kwargs
+        )
         # set model
         model = cls.build_model(cls.task, lang, n_model, **dl_kwargs, **model_kwargs)
         # set misc
         misc_files = cls.misc_files.get(lang, [])
         misc = cls.build_misc(lang, n_model, misc_files, **dl_kwargs)
 
-        config = DoolyTaskConfig(lang=lang, n_model=n_model, device=device, misc_tuple=misc)
+        config = DoolyTaskConfig(
+            lang=lang, n_model=n_model, device=device, misc_tuple=misc
+        )
 
         init_params = inspect.signature(cls.__init__).parameters
         init_kwargs = {"config": config}
@@ -264,7 +274,12 @@ class DoolyTaskBase:
             elif filename.endswith(".items"):
                 misc += (open(resolved_file_path, "r", encoding="utf-8").readlines(),)
             elif filename.endswith(".txt"):
-                misc += (open(resolved_file_path, "r", encoding="utf-8").read().strip().splitlines(),)
+                misc += (
+                    open(resolved_file_path, "r", encoding="utf-8")
+                    .read()
+                    .strip()
+                    .splitlines(),
+                )
             elif filename.endswith(".zip"):
                 zip_file = zipfile.ZipFile(resolved_file_path)
                 zip_path = os.path.join(*resolved_file_path.split("/")[:-1])
@@ -278,7 +293,6 @@ class DoolyTaskBase:
 
 
 class DoolyTaskWithModelTokenzier(DoolyTaskBase):
-
     def finalize(self):
         self._model.to(self.device)
 
@@ -303,8 +317,7 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
         return DoolyModel.build_model(task, lang, n_model, **kwargs)
 
     def _prepare_inputs(
-        self,
-        inputs: Dict[str, Union[torch.Tensor, Any]]
+        self, inputs: Dict[str, Union[torch.Tensor, Any]],
     ) -> Dict[str, Union[torch.Tensor, Any]]:
         """ Prepare input to be placed on the same device in inference. """
         for k, v in inputs.items():
@@ -384,7 +397,9 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
             if hasattr(self.tokenizer, "segment"):
                 tokens = self.tokenizer.segment(text, text_pair)
             else:
-                tokens = self.tokenizer.tokenize(text, text_pair, add_special_tokens=False)
+                tokens = self.tokenizer.tokenize(
+                    text, text_pair, add_special_tokens=False
+                )
 
         return tokens
 

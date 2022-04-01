@@ -1,6 +1,5 @@
 import math
 import random
-import torch
 import torch.nn as nn
 from transformers.models.fsmt.configuration_fsmt import FSMTConfig
 from transformers.models.fsmt.modeling_fsmt import (
@@ -38,12 +37,13 @@ class FSMTConfig(FSMTConfig):
 
 
 class FSMTEncoderLayer(EncoderLayer):
-
     def __init__(self, config: FSMTConfig):
         super().__init__(config)
         self.pre_layernorm = config.encoder_pre_layernorm
 
-    def forward(self, x, encoder_padding_mask, layer_head_mask, output_attentions=False):
+    def forward(
+        self, x, encoder_padding_mask, layer_head_mask, output_attentions=False
+    ):
         """
         Args:
             x (`torch.Tensor`): input to the layer of shape *(seq_len, batch, embed_dim)*
@@ -85,7 +85,6 @@ class FSMTEncoderLayer(EncoderLayer):
 
 
 class FSMTDecoderLayer(DecoderLayer):
-
     def __init__(self, config: FSMTConfig):
         super().__init__(config)
         self.pre_layernorm = config.decoder_pre_layernorm
@@ -177,11 +176,13 @@ class FSMTEncoder(nn.Module):
         embed_dim = embed_tokens.embedding_dim
         self.embed_scale = math.sqrt(embed_dim) if config.scale_embedding else 1.0
         self.embed_positions = SinusoidalPositionalEmbedding(
-            config.max_position_embeddings + self.padding_idx + 1, embed_dim, self.padding_idx
+            config.max_position_embeddings + self.padding_idx + 1,
+            embed_dim,
+            self.padding_idx,
         )
         self.layers = nn.ModuleList(
             [FSMTEncoderLayer(config) for _ in range(config.encoder_layers)]
-        )  # type: List[EncoderLayer]
+        )
         self.pre_layernorm = config.encoder_pre_layernorm
         if self.pre_layernorm:
             self.layer_norm = nn.LayerNorm(embed_dim)
@@ -238,7 +239,9 @@ class FSMTEncoder(nn.Module):
                 x = x.transpose(0, 1)  # B x T x C -> T x B x C
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = random.uniform(0, 1)
-            if self.training and (dropout_probability < self.layerdrop):  # skip the layer
+            if self.training and (
+                dropout_probability < self.layerdrop
+            ):  # skip the layer
                 attn = None
             else:
                 x, attn = encoder_layer(
@@ -261,8 +264,13 @@ class FSMTEncoder(nn.Module):
             encoder_states += (x,)
 
         if not return_dict:
-            return tuple(v for v in [x, encoder_states, all_attentions] if v is not None)
-        return BaseModelOutput(last_hidden_state=x, hidden_states=encoder_states, attentions=all_attentions)
+            return tuple(
+                v for v in [x, encoder_states, all_attentions] if v is not None
+            )
+
+        return BaseModelOutput(
+            last_hidden_state=x, hidden_states=encoder_states, attentions=all_attentions
+        )
 
 
 class FSMTDecoder(nn.Module):
@@ -282,11 +290,13 @@ class FSMTDecoder(nn.Module):
         self.embed_tokens = embed_tokens
         embed_dim = embed_tokens.embedding_dim
         self.embed_positions = SinusoidalPositionalEmbedding(
-            config.max_position_embeddings + self.padding_idx + 1, embed_dim, self.padding_idx
+            config.max_position_embeddings + self.padding_idx + 1,
+            embed_dim,
+            self.padding_idx,
         )
         self.layers = nn.ModuleList(
             [FSMTDecoderLayer(config) for _ in range(config.decoder_layers)]
-        )  # type: List[DecoderLayer]
+        )
         self.pre_layernorm = config.decoder_pre_layernorm
         if self.pre_layernorm:
             self.layer_norm = nn.LayerNorm(embed_dim)
@@ -294,11 +304,15 @@ class FSMTDecoder(nn.Module):
         if is_deepspeed_zero3_enabled():
             import deepspeed
 
-            with deepspeed.zero.GatheredParameters(self.embed_tokens.weight, modifier_rank=None):
+            with deepspeed.zero.GatheredParameters(
+                self.embed_tokens.weight, modifier_rank=None
+            ):
                 embed_tokens_weight_shape = self.embed_tokens.weight.shape
         else:
             embed_tokens_weight_shape = self.embed_tokens.weight.shape
-        self.output_projection = nn.Linear(embed_tokens_weight_shape[1], embed_tokens_weight_shape[0], bias=False)
+        self.output_projection = nn.Linear(
+            embed_tokens_weight_shape[1], embed_tokens_weight_shape[0], bias=False
+        )
         self.output_projection.weight = self.embed_tokens.weight
 
     def forward(
@@ -368,11 +382,14 @@ class FSMTDecoder(nn.Module):
         next_decoder_cache = []
 
         # check if head_mask has a correct number of layers specified if desired
-        for attn_mask, mask_name in zip([head_mask, cross_attn_head_mask], ["head_mask", "cross_attn_head_mask"]):
+        for attn_mask, mask_name in zip(
+            [head_mask, cross_attn_head_mask], ["head_mask", "cross_attn_head_mask"]
+        ):
             if attn_mask is not None:
-                assert attn_mask.size()[0] == (
-                    len(self.layers)
-                ), f"The `{mask_name}` should be specified for {len(self.layers)} layers, but it is for {head_mask.size()[0]}."
+                assert attn_mask.size()[0] == len(self.layers), (
+                    f"The `{mask_name}` should be specified for {len(self.layers)} layers, "
+                    f"but it is for {head_mask.size()[0]}."
+                )
         for idx, decoder_layer in enumerate(self.layers):
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             if output_hidden_states:
@@ -393,7 +410,11 @@ class FSMTDecoder(nn.Module):
                 layer_state=layer_state,
                 causal_mask=decoder_causal_mask,
                 layer_head_mask=(head_mask[idx] if head_mask is not None else None),
-                cross_attn_layer_head_mask=(cross_attn_head_mask[idx] if cross_attn_head_mask is not None else None),
+                cross_attn_layer_head_mask=(
+                    cross_attn_head_mask[idx]
+                    if cross_attn_head_mask is not None
+                    else None
+                ),
                 output_attentions=output_attentions,
             )
 
@@ -423,7 +444,15 @@ class FSMTDecoder(nn.Module):
 
         if not return_dict:
             return tuple(
-                v for v in [x, next_cache, all_hidden_states, all_self_attns, all_cross_attns] if v is not None
+                v
+                for v in [
+                    x,
+                    next_cache,
+                    all_hidden_states,
+                    all_self_attns,
+                    all_cross_attns,
+                ]
+                if v is not None
             )
         return BaseModelOutputWithPastAndCrossAttentions(
             last_hidden_state=x,
@@ -439,8 +468,12 @@ class FSMTModel(_FSMTModel):
         super(_FSMTModel, self).__init__(config)
 
         padding_idx = config.pad_token_id
-        encoder_embed_tokens = nn.Embedding(config.src_vocab_size, config.d_model, padding_idx)
-        decoder_embed_tokens = nn.Embedding(config.tgt_vocab_size, config.d_model, padding_idx)
+        encoder_embed_tokens = nn.Embedding(
+            config.src_vocab_size, config.d_model, padding_idx
+        )
+        decoder_embed_tokens = nn.Embedding(
+            config.tgt_vocab_size, config.d_model, padding_idx
+        )
 
         self.encoder = FSMTEncoder(config, encoder_embed_tokens)
         self.decoder = FSMTDecoder(config, decoder_embed_tokens)

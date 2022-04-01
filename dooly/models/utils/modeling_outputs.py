@@ -1,11 +1,7 @@
 import torch
 from typing import Optional, Tuple
 from dataclasses import dataclass
-from transformers.modeling_outputs import (
-    BaseModelOutputWithPoolingAndCrossAttentions,
-    TokenClassifierOutput,
-    ModelOutput,
-)
+from transformers.modeling_outputs import ModelOutput
 
 
 @dataclass

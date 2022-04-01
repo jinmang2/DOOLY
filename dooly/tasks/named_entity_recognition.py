@@ -40,6 +40,7 @@ class NamedEntityRecognition(SequenceTagging):
         List[Tuple[str, str]]: token and its predicted tag tuple list
 
     """
+
     task: str = "ner"
     available_langs: List[str] = ["ko", "en", "ja", "zh"]
     available_models: Dict[str, List[str]] = {
@@ -48,9 +49,7 @@ class NamedEntityRecognition(SequenceTagging):
         "ja": ["jaberta.base"],
         "zh": ["zhberta.base"],
     }
-    misc_files: Dict[str, List[str]] = {
-        "ko": ["wiki.ko.items"]
-    }
+    misc_files: Dict[str, List[str]] = {"ko": ["wiki.ko.items"]}
 
     def __init__(
         self,
@@ -66,7 +65,7 @@ class NamedEntityRecognition(SequenceTagging):
 
         self._tokenizer = tokenizer
         self._model = model
-        self._wsd_dict = config.misc_tuple[0] # wiki.ko.items
+        self._wsd_dict = config.misc_tuple[0]  # wiki.ko.items
 
         self._wsd = None
         self._cls2cat = None
@@ -77,9 +76,9 @@ class NamedEntityRecognition(SequenceTagging):
     def __call__(
         self,
         sentences: Union[List[str], str],
-        add_special_tokens: bool = True, # ENBERTa, JaBERTa, ZhBERTa에선 없음
+        add_special_tokens: bool = True,  # ENBERTa, JaBERTa, ZhBERTa에선 없음
         do_sent_split: bool = True,
-        ja_zh_split_force: bool = False, # deprecated
+        ja_zh_split_force: bool = False,  # deprecated
         ignore_labels: List[int] = [],
         apply_wsd: bool = False,
         batch_size: int = 32,
@@ -164,7 +163,9 @@ class NamedEntityRecognition(SequenceTagging):
         """
         if self._wsd is None:
             from . import WordSenseDisambiguation
-            self._wsd = WordSenseDisambiguation.build(lang="ko", n_model="transformer.large")
+            self._wsd = WordSenseDisambiguation.build(
+                lang="ko", n_model="transformer.large"
+            )
 
         if self._cls2cat is None:
             self._cls2cat = dict()
@@ -258,7 +259,9 @@ class NamedEntityRecognition(SequenceTagging):
 
         outputs = []
         for wsd_results, _tags, target_token_ids in zip(batch_results, tags, targets):
-            outputs.append(convert_wsd_results_to_tags(wsd_results, _tags, target_token_ids))
+            outputs.append(
+                convert_wsd_results_to_tags(wsd_results, _tags, target_token_ids)
+            )
 
         return outputs
 
@@ -373,7 +376,8 @@ class NamedEntityRecognition(SequenceTagging):
 
         result = [
             (pair[0].replace("▁", " ").strip(), pair[1])
-            if pair[0] != " " else (" ", "O")
+            if pair[0] != " "
+            else (" ", "O")
             for pair in result
         ]
         return result
@@ -385,7 +389,7 @@ class NamedEntityRecognition(SequenceTagging):
         n_model: str,
         misc_files: List[str],
         **dl_kwargs,
-    ) -> Tuple: # overrides
+    ) -> Tuple:  # overrides
         wsd_dict = {}
         if "charbert" in n_model:
             f_wsd_dict = cls._build_misc(lang, n_model, misc_files, **dl_kwargs)[0]

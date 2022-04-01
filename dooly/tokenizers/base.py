@@ -1,7 +1,7 @@
 import re
 import unicodedata
 from abc import abstractmethod
-from typing import List, Union, Dict, Set, Callable, Optional
+from typing import List, Union, Dict, Set, Optional
 
 import torch
 
@@ -16,7 +16,6 @@ DecodedOutput = Union[str, List[str]]
 
 
 class _BaseTokenizer:
-
     def __init__(
         self,
         lang: str,
@@ -61,7 +60,7 @@ class _BaseTokenizer:
 
     @property
     def nspecial(self) -> int:
-        return 4 # cls, sep, pad, unk
+        return 4  # cls, sep, pad, unk
 
     @property
     def langtok_style(self):
@@ -116,7 +115,7 @@ class _BaseTokenizer:
 
     def _normalize(self, text: str) -> str:
         """ Unicode normalization and whitespace removal (often needed for context) """
-        text = unicodedata.normalize("NFKC", data)
+        text = unicodedata.normalize("NFKC", text)
         text = self._normalize_space(text)
         return text
 
@@ -268,7 +267,6 @@ class _BaseTokenizer:
             )
             encoded = None
             encoded_tags = None
-            attn_mask = False
 
             if return_tags:
                 tokenized, tags = tokenized
@@ -348,8 +346,7 @@ class _BaseTokenizer:
             )
 
         ignore_symbols = set(None or ignore_symbols)
-        ignore_symbols.update(
-            [self.cls_token_id, self.sep_token_id, self.pad_token_id])
+        ignore_symbols.update([self.cls_token_id, self.sep_token_id, self.pad_token_id])
 
         list_of_ids = ids
         decoded_texts = []
@@ -369,7 +366,7 @@ class _BaseTokenizer:
         sequences: Dict[str, EncodedOutput],
         padding: Union[str, bool] = True,
         return_tensors: bool = True,
-        pad_to_multiple_of: Union[int, bool] = False, # match to hf pad methdo
+        pad_to_multiple_of: Union[int, bool] = False,  # match to hf pad method
     ) -> Dict[str, PaddedOutput]:
         """Pad batched sequences.
         if return_tensors, then return torch.LongTensor object.
@@ -407,13 +404,16 @@ class _BaseTokenizer:
 
 
 class SentTokenizeMixin:
+    """ Sentence Tokenization Mixin """
 
     def _set_sent_tokenizer(self):
         if self.lang in ["ko", "multi"]:
             from kss import split_sentences
+
             self._ko_sent_tokenizer = split_sentences
         if self.lang in ["en", "multi"]:
             from nltk.tokenize import sent_tokenize
+
             self._en_sent_tokenizer = sent_tokenize
 
     def sent_tokenize(
@@ -426,7 +426,7 @@ class SentTokenizeMixin:
 
         if langs is None:
             langs = self.lang
-        elif self.lang is not "multi":
+        elif self.lang != "multi":  # F632
             raise AttributeError("`langs` parameter is only used for `multi` model.")
 
         if isinstance(langs, str):
@@ -439,7 +439,7 @@ class SentTokenizeMixin:
                 raise AttributeError
             try:
                 sentences = self._ko_sent_tokenizer(texts)
-            except:
+            except Exception as e:
                 do_per_sample = True
         else:
             do_per_sample = True
@@ -455,7 +455,7 @@ class SentTokenizeMixin:
                     if not hasattr(self, "_en_sent_tokenizer"):
                         raise AttributeError
                     sentences.append(self._en_sent_tokenizer(text))
-                else: # lang in ["ja", "zh"]
+                else:  # lang in ["ja", "zh"]
                     text = text.replace("。", "。[SEP]")
                     text = text.replace("！", "！[SEP]")
                     text = text.replace("？", "？[SEP]")
@@ -471,4 +471,5 @@ class SentTokenizeMixin:
 
 class Tokenizer(_BaseTokenizer, SentTokenizeMixin):
     """ Whitespace Base Tokenizer with sentence tokenizer """
+
     pass

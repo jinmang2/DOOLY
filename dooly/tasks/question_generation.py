@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, Callable, Optional
+from typing import List, Dict, Union, Optional
 
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
@@ -6,7 +6,6 @@ from .base import DoolyTaskConfig, Seq2Seq
 from ..tokenizers import Tokenizer as _Tokenizer
 
 from .base.wikipedia2vec import (
-    QueryParser,
     WhooshIndex,
     Wikipedia2Vec,
     SimilarWords,
@@ -43,6 +42,7 @@ class QuestionGeneration(Seq2Seq):
         Tuple[str, List[str]] : question, wrong_answers (if `n_wrong` > 1)
 
     """
+
     task: str = "qg"
     available_langs: List[str] = ["ko"]
     available_models: Dict[str, List[str]] = {
@@ -149,9 +149,11 @@ class QuestionGeneration(Seq2Seq):
         truncated_context = " ".join(truncated_context)
         if len(truncated_context) > self.max_length:
             if start_idx < len(context) // 2:
-                truncated_context = truncated_context[:self.max_length]
+                truncated_context = truncated_context[: self.max_length]
             else:
-                truncated_context = truncated_context[len(truncated_context) - self.max_length:]
+                truncated_context = truncated_context[
+                    len(truncated_context) - self.max_length :
+                ]
 
         return truncated_context
 
@@ -184,9 +186,9 @@ class QuestionGeneration(Seq2Seq):
         elif isinstance(answer, str) and isinstance(context, list):
             context = [self._focus_answer(c, answer) for c in context]
         elif isinstance(answer, list) and isinstance(context, list):
-            assert len(answer) == len(context), (
-                "length of answer list and context list must be same."
-            )
+            assert len(answer) == len(
+                context
+            ), "length of answer list and context list must be same."
             context = [self._focus_answer(c, a) for c, a in zip(context, answer)]
 
         generated = self.generate(
@@ -202,7 +204,7 @@ class QuestionGeneration(Seq2Seq):
             length_penalty=length_penalty,
             batch_size=batch_size,
             verbose=verbose,
-            **kwargs
+            **kwargs,
         )
 
         if issubclass(self.tokenizer.__class__, PreTrainedTokenizerBase):

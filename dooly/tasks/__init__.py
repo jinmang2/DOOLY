@@ -8,3 +8,18 @@ from .question_generation import QuestionGeneration
 from .word_embedding import WordEmbedding
 from .word_sense_disambiguation import WordSenseDisambiguation
 from .zero_shot_classification import ZeroShotClassification
+
+
+DoolyTaskHub = {
+    "bt": BackTranslationDA,
+    "dp": DependencyParsing,
+    "mrc": MachineReadingComprehension,
+    "mt": MachineTranslation,
+    "ner": NamedEntityRecognition,
+    "nli": NaturalLanguageInference,
+    "pos": PosTagging,
+    "qg": QuestionGeneration,
+    "word_embedding": WordEmbedding,
+    "wsd": WordSenseDisambiguation,
+    "zero_topic": ZeroShotClassification,
+}
