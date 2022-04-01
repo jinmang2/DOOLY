@@ -439,7 +439,7 @@ class SentTokenizeMixin:
                 raise AttributeError
             try:
                 sentences = self._ko_sent_tokenizer(texts)
-            except Exception as e:
+            except Exception:
                 do_per_sample = True
         else:
             do_per_sample = True

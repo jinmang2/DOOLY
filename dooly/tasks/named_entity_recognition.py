@@ -163,6 +163,7 @@ class NamedEntityRecognition(SequenceTagging):
         """
         if self._wsd is None:
             from . import WordSenseDisambiguation
+            
             self._wsd = WordSenseDisambiguation.build(
                 lang="ko", n_model="transformer.large"
             )

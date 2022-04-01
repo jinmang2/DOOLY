@@ -68,7 +68,8 @@ class DependencyParsing(SequenceTagging):
         results = []
         iterator = zip(sentences, tokens, heads, labels, sent_lengths)
         for sentence, token, head, label, sent_length in iterator:
-            head = [int(h)-1 for h in head][:sent_length]  # due to default <s> token
+            # due to default <s> token
+            head = [int(h)-1 for h in head][:sent_length]  # noqa
             label = label[:sent_length]
             results.append(self._postprocess(sentence, token, head, label))
 

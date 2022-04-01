@@ -67,11 +67,11 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
 
                 # Go through all possibles for the n_best_size greater start end end logits
                 start_indexes = np.argsort(start_logits)[
-                    -1 : -n_best_size - 1 : -1
-                ].tolist()  # noqa
+                    -1 : -n_best_size - 1 : -1  # noqa
+                ].tolist()
                 end_indexes = np.argsort(end_logits)[
-                    -1 : -n_best_size - 1 : -1
-                ].tolist()  # noqa
+                    -1 : -n_best_size - 1 : -1  # noqa
+                ].tolist()
                 for start_index in start_indexes:
                     for end_index in end_indexes:
                         # Don't consider out-of-scope answers!
@@ -97,8 +97,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
                                     offset_mapping[end_index][1],
                                 ),
                                 "score": (
-                                    start_logits[start_index]
-                                    + end_logits[end_index]
+                                    start_logits[start_index] + end_logits[end_index]
                                 ),
                                 "start_logit": start_logits[start_index],
                                 "end_logit": end_logits[end_index],
@@ -126,7 +125,7 @@ class SequenceTagging(DoolyTaskWithModelTokenzier):
             for pred in predictions:
                 offsets = pred.pop("offsets")
                 pred["offsets"] = offsets
-                pred["text"] = context[offsets[0] : offsets[1]]
+                pred["text"] = context[offsets[0] : offsets[1]]  # noqa
 
             # In the very rare edge case we have not a single non-null prediction
             # we create a fake predictions to avoid failure

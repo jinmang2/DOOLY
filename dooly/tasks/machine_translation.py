@@ -137,7 +137,7 @@ class MachineTranslation(Seq2Seq):
                     subfolder=f"{self.task}/{self.lang}/{self.n_model}/{lang}",
                 )
                 self._tokenizer._set_sub_tokenizer(lang, subtok)
-            except (ValueError, EnvironmentError, OSError) as e:
+            except (ValueError, EnvironmentError, OSError):
                 continue
 
         self.finalize()

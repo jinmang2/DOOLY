@@ -59,6 +59,7 @@ available_tasks = list(DoolyTokenizerHub.keys())
 
 
 class DoolyTokenizer:
+    """ Dooly Tokenizer """
 
     @classmethod
     def build_tokenizer(

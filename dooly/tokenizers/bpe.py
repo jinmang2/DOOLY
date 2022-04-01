@@ -142,6 +142,7 @@ class Encoder:
 
 
 class Gpt2BpeTokenizer(Tokenizer):
+    """ GPT2 BytePairEncoding Tokenizer """
 
     def _build_bpe(self, lang: str, encoder_json: Dict = None, bpe_merges: Dict = None):
         self._bpe = Encoder(encoder_json, bpe_merges)
@@ -201,6 +202,8 @@ class Gpt2BpeTokenizer(Tokenizer):
 
 
 class BpeJaZhTokenizer(Tokenizer):
+    """ BytePairEncoding Tokenizer for Ja and Zh """
+
     def _build_bpe(self, lang: str, encoder_json: Dict = None, bpe_merges: Dict = None):
         if lang == "ja":
             try:

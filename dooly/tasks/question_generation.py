@@ -152,7 +152,7 @@ class QuestionGeneration(Seq2Seq):
                 truncated_context = truncated_context[: self.max_length]
             else:
                 truncated_context = truncated_context[
-                    len(truncated_context) - self.max_length :
+                    len(truncated_context) - self.max_length:
                 ]
 
         return truncated_context

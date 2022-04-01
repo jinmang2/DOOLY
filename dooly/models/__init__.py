@@ -77,6 +77,7 @@ def no_init_weights(_enable=True):
 
 
 class DoolyModel:
+    """ Dooly Model """
 
     @classmethod
     def build_model(cls, task: str, lang: str, n_model: str, **kwargs):

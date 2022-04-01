@@ -361,7 +361,7 @@ class SegmentRobertaModel(RobertaModel):
             (
                 encoder_batch_size,
                 encoder_sequence_length,
-                _
+                _,
             ) = encoder_hidden_states.size()
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
             if encoder_attention_mask is None:

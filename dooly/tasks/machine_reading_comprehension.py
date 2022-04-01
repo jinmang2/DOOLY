@@ -96,7 +96,7 @@ class MachineReadingComprehension(SequenceTagging):
         params.update(
             dict(
                 truncation="only_second" if pad_on_right else "only_first",
-                max_length=self.model.config.max_position_embeddings-2,
+                max_length=self.model.config.max_position_embeddings - 2,
                 stride=self.doc_stride,
                 return_overflowing_tokens=True,
                 return_offsets_mapping=True,

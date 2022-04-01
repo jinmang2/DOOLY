@@ -4,7 +4,7 @@ from typing import Optional
 from .tasks import DoolyTaskHub
 
 
-def get_normalize_task_name(task: str):
+def normalize_task(task: str):
     task = re.sub(" +", " ", task.lower())
     task = task.replace("-", "_").replace(" ", "_")
     return task

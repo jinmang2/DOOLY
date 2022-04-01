@@ -21,9 +21,9 @@ from ...models import DoolyModel
 def is_notebook():
     try:
         shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
+        if shell == "ZMQInteractiveShell":
             return True  # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
+        elif shell == "TerminalInteractiveShell":
             return False  # Terminal running IPython
         else:
             return False  # Other type (?)
@@ -42,6 +42,7 @@ _COLUMN_NAME_USED_IN_BATCH = {}
 
 
 def batchify(*batch_args):
+    """ Batchify inference methods """
 
     def _batchify(func: Callable):
         # Executed only when a function decorated with `batchify` is called
@@ -88,7 +89,7 @@ def batchify(*batch_args):
             for i in tqdm(
                 range((n_samples - 1) // batch_size + 1), disable=not verbose
             ):
-                cols = batch_cols[i * batch_size : (i + 1) * batch_size] # noqa
+                cols = batch_cols[i * batch_size : (i + 1) * batch_size]  # noqa
                 batch_outputs = func(*args, **cols, **kwargs)
                 if isinstance(batch_outputs, tuple):
                     if outputs is None:
@@ -317,7 +318,8 @@ class DoolyTaskWithModelTokenzier(DoolyTaskBase):
         return DoolyModel.build_model(task, lang, n_model, **kwargs)
 
     def _prepare_inputs(
-        self, inputs: Dict[str, Union[torch.Tensor, Any]],
+        self,
+        inputs: Dict[str, Union[torch.Tensor, Any]],
     ) -> Dict[str, Union[torch.Tensor, Any]]:
         """ Prepare input to be placed on the same device in inference. """
         for k, v in inputs.items():

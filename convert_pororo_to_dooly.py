@@ -10,7 +10,7 @@ else:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=f"Convert Pororo module to Dooly.")
+    parser = argparse.ArgumentParser(description="Convert Pororo module to Dooly.")
     parser.add_argument("--task", type=str, help="task name")
     parser.add_argument("--save_path", type=str, help="path to save.")
     args = parser.parse_args()
