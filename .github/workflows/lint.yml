@@ -22,7 +22,7 @@ jobs:
 
       # Runs the Super-Linter action
       - name: Lint Code Base
-        uses: github/super-linter@v3
+        uses: github/super-linter@v3.17.0
         env:
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
