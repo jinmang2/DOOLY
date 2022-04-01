@@ -1,0 +1,33 @@
+name: Coverage Report
+
+# Run this workflow every time a new commit pushed to your repository
+on: push
+
+jobs:
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.7'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel pytest
+          python -m pip install --upgrade  virtualenv
+          python -m pip install -e .
+
+      - name: Generate coverage report
+        run: |
+          coverage run --source=./ -m unittest discover -p "tests/test_*.py"
+          coverage xml
