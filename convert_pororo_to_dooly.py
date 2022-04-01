@@ -1,6 +1,6 @@
 import argparse
 from dooly import DoolyConverter
-from dooly.converters.base import is_available_pororo
+from dooly.converters import is_available_pororo
 
 
 if is_available_pororo():
