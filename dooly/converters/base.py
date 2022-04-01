@@ -1,8 +1,9 @@
+import os
 import json
 import shutil
 import platform
 import torch
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from ..models import FSMTConfig, FSMTForConditionalGeneration
 from ..models import (
     RobertaConfig,
@@ -49,7 +50,8 @@ class DoolyConverter:
                 "Please install pororo with: `pip install pororo`. "
             )
 
-        self._pororo_model = Pororo(**asdict(config))._model
+        args = dict(task=config.task, lang=config.lang, n_model=config.n_model)
+        self._pororo_model = Pororo(**args)._model
         self._hf_model = None
 
     def __init_subclass__(cls, **kwargs):
