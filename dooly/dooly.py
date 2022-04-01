@@ -48,7 +48,7 @@ class Dooly:
         lang: Optional[str] = None,
         n_model: Optional[str] = None,
         **kwargs,
-     ):
+    ):
         task = normalize_task(task)
         task = TASK_ALIASES.get(task, None)
         if task is None:

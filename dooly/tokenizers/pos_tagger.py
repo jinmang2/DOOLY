@@ -196,11 +196,11 @@ class NltkEnPostTagger(PosTagger):
                 token = ("…", "…")
 
             if sent.startswith(f"{word} "):
-                sent = sent[len(f"{word} "):]  # noqa
+                sent = sent[len(f"{word} ") :]  # noqa
                 result.append(token)
                 result.append((" ", "SPACE"))
             elif sent.startswith(word):
-                sent = sent[len(word):]  # noqa
+                sent = sent[len(word) :]  # noqa
                 result.append(token)
             else:
                 raise ValueError(f"Can't align the {token} to {sent}")
