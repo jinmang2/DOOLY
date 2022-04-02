@@ -107,7 +107,6 @@ class DoolyConverter:
             os.makedirs(save_path)
         return save_path
 
-
     @property
     def pororo_save_path(self):
         return self._pororo_save_path
