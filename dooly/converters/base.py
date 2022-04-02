@@ -26,6 +26,7 @@ else:
 
 @dataclass
 class TaskConfig:
+    save_path: str
     task: str
     lang: str
     n_model: str
@@ -55,8 +56,8 @@ class DoolyConverter:
             cls.subclasses[cls.name] = cls
 
     @classmethod
-    def load(cls, task: str, lang: str, n_model: str, save_path: str):
-        converter = cls.subclasses.get(task, None)
+    def load(cls, task: str, lang: str, n_model: str, save_path: str, name: str = None):
+        converter = cls.subclasses.get(task if name is None else name, None)
         assert converter is not None
         config = TaskConfig(task=task, lang=lang, n_model=n_model, save_path=save_path)
         return converter(config)
@@ -146,6 +147,10 @@ class DoolyConverter:
 
 
 class FsmtConverter(DoolyConverter):
+    """ Fairseq Machine Translation model Converter """
+
+    name: str = "fsmt"
+
     def load_vocab(self):
         return self._pororo_model.src_dict.indices
 
@@ -220,6 +225,10 @@ class FsmtConverter(DoolyConverter):
 
 
 class RobertaConverter(DoolyConverter):
+    """ Roberta model Converter """
+    
+    name: str = "roberta"
+
     pororo_task_head_name = None
     hf_model_class = None
 
