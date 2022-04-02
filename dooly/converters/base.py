@@ -29,7 +29,6 @@ class TaskConfig:
     task: str
     lang: str
     n_model: str
-    save_path: str
 
 
 class DoolyConverter:
@@ -46,7 +45,7 @@ class DoolyConverter:
                 "Please install pororo with: `pip install pororo`."
             )
 
-        args = dict(task=config.task, lang=config.lang, n_model=config.n_model)
+        args = dict(task=config.task, lang=config.lang, model=config.n_model)
         self._pororo_model = Pororo(**args)._model
         self._hf_model = None
 
@@ -98,12 +97,16 @@ class DoolyConverter:
 
     @property
     def save_path(self):
-        return os.path.join(
+        save_path = os.path.join(
             self.config.save_path,
             self.task,
             self.lang,
             ".".join(self.n_model.split(".")[:2]),
         )
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        return save_path
+
 
     @property
     def pororo_save_path(self):
