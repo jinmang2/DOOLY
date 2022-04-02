@@ -226,7 +226,7 @@ class FsmtConverter(DoolyConverter):
 
 class RobertaConverter(DoolyConverter):
     """ Roberta model Converter """
-    
+
     name: str = "roberta"
 
     pororo_task_head_name = None
@@ -253,7 +253,7 @@ class RobertaConverter(DoolyConverter):
         return config
 
     def intialize_hf_model(self, config):
-        hf_model = self.model_class(config)
+        hf_model = self.hf_model_class(config)
         hf_model.eval()
         return hf_model
 
