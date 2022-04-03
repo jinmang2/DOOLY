@@ -136,7 +136,7 @@ class DoolyConverter:
         model.save_pretrained(self.save_path)
 
     def get_misc_filenames(self):
-        raise NotImplementedError
+        return []
 
     def load_and_save_misc(self):
         misc_files = self.get_misc_filenames()
