@@ -12,12 +12,6 @@ Dooly는 위 단점 세 가지를 개선한 라이브러리입니다.
 ## How to use?
 아래와 같이 간단하게 사용 가능합니다
 
-- requirements (v0.1.1 -> setup으로 해결)
-    - `mecab`, `fugashi`, `ipadic`, `whoosh`, `nltk`
-```
-$ pip install transformers datasets torch tokenizers dataclasses numpy
-```
-
 - install
 
 ```
@@ -32,7 +26,7 @@ from dooly import Dooly
 ner = Dooly(task="ner", lang="ko")
 ```
 
-## Support Tasks
+## Supported Tasks
 - Back Translation Data Augmentation
 - Dependency Parsing
 - Machine Reading Comprehension
@@ -46,6 +40,14 @@ ner = Dooly(task="ner", lang="ko")
 - Zero Shot Topic Classification
 
 
+## Citations
 
-## Reference
-- https://github.com/kakaobrain/pororo
+```
+@misc{pororo,
+  author       = {Heo, Hoon and Ko, Hyunwoong and Kim, Soohwan and
+                  Han, Gunsoo and Park, Jiwoo and Park, Kyubyong},
+  title        = {PORORO: Platform Of neuRal mOdels for natuRal language prOcessing},
+  howpublished = {\url{https://github.com/kakaobrain/pororo}},
+  year         = {2021},
+}
+```
