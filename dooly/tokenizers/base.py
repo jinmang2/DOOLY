@@ -1,6 +1,5 @@
 import re
 import torch
-import importlib
 import unicodedata
 from abc import abstractmethod
 from typing import List, Union, Dict, Set, Optional
@@ -422,15 +421,14 @@ class SentTokenizeMixin:
 
                 self._ko_sent_tokenizer = split_sentences
             else:
-                raise ModuleNotFoundError(
-                    "Please install kss with: `pip install kss`."
-                )
+                raise ModuleNotFoundError("Please install kss with: `pip install kss`.")
         if self.lang in ["en", "multi"]:
             if is_available_nltk():
                 import nltk
+
                 try:
                     nltk.data.find("tokenizers/punkt")
-                except LookipError:
+                except LookupError:
                     nltk.download("punkt")
 
                 from nltk.tokenize import sent_tokenize

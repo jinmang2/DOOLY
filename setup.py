@@ -68,18 +68,8 @@ extras["zh"] = deps_list("jieba")
 extras["search"] = deps_list("whoosh")
 extras["convert"] = deps_list("pororo", "boto3")
 extras["quality"] = deps_list("black", "flake8")
-
-extras["all"] = (
-    extras["ja"]
-    + extras["zh"]
-    + extras["search"]
-    + extras["quality"]
-)
-
-extras["pororo"] = (
-    extras["all"]
-    + extras["convert"]
-)
+extras["all"] = extras["ja"] + extras["zh"] + extras["search"] + extras["quality"]
+extras["pororo"] = extras["all"] + extras["convert"]
 
 install_requires = [
     deps["dataclasses"]

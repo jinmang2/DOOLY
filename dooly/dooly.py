@@ -68,7 +68,6 @@ class Dooly:
             "\n  .available_tasks()\n  .available_models(task: str)"
         )
 
-
     @staticmethod
     def available_tasks() -> str:
         return f"Available tasks are {list(TASK_ALIASES.keys())}."
