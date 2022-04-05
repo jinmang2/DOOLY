@@ -17,6 +17,6 @@ make install
 cd ~
 # mecab -d /usr/local/lib/mecab/dic/mecab-ko-dic
 apt install git
-bash <(curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh)
+curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh
 # pip install mecab-python
 pip install python-mecab-ko

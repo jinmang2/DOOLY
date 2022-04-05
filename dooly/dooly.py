@@ -60,6 +60,15 @@ class Dooly:
             lang = LANG_ALIASES.get(lang.lower(), None)
         return task_cls.build(lang, n_model, **kwargs)
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}"
+            "(task: str, lang: Optional[str], n_model: Optional[str], **kwargs)\n"
+            "You can use these methods to see which tasks and models are available:"
+            "\n  .available_tasks()\n  .available_models(task: str)"
+        )
+
+
     @staticmethod
     def available_tasks() -> str:
         return f"Available tasks are {list(TASK_ALIASES.keys())}."

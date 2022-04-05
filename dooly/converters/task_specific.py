@@ -478,12 +478,13 @@ class StsConverter(RobertaConverter):
     def convert(self):
         if "sbert" not in self.n_model:
             return super().convert()
-        
+
         # UKPLab/sentence_transformers
         self._hf_model = self._pororo_model
         self._hf_model.save(path=self.save_path, create_model_card=False)
-        
+
         return self._pororo_model, self._hf_model
+
 
 class WsdConverter(FsmtConverter):
     name = "wsd"

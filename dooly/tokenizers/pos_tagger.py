@@ -1,12 +1,18 @@
 import re
 import os
 import abc
-import importlib
 from typing import List, Tuple, Union, Dict
 
 import torch
 
 from .base import Tokenizer
+from .import_utils import (
+    is_available_mecab,
+    is_available_ipadic,
+    is_available_fugashi,
+    is_available_jieba,
+    is_available_nltk,
+)
 
 
 InputTexts = Union[str, List[str]]
@@ -15,32 +21,6 @@ EncodedOutput = Union[List[int], List[List[int]], torch.Tensor]
 PaddedOutput = Union[List[List[int]], torch.Tensor]
 
 PosTagResult = Union[Tuple[str, str], str]
-
-
-def is_available_mecab():
-    if os.name != "nt":
-        ModuleSpec = importlib.util.find_spec("mecab")
-        return ModuleSpec is not None
-    else:
-        ModuleSpec1 = importlib.util.find_spec("eunjeon")
-        ModuleSpec2 = importlib.util.find_spec("mecab")
-        return ModuleSpec1 is not None or ModuleSpec2 is not None
-
-
-def is_available_ipadic():
-    return importlib.util.find_spec("ipadic")
-
-
-def is_available_fugashi():
-    return importlib.util.find_spec("fugashi")
-
-
-def is_available_jieba():
-    return importlib.util.find_spec("jieba")
-
-
-def is_available_nltk():
-    return importlib.util.find_spec("nltk")
 
 
 class PosTagger:

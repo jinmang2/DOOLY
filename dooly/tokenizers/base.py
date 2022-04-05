@@ -1,9 +1,14 @@
 import re
+import torch
+import importlib
 import unicodedata
 from abc import abstractmethod
 from typing import List, Union, Dict, Set, Optional
 
-import torch
+from .import_utils import (
+    is_available_kss,
+    is_available_nltk,
+)
 
 
 SPACE_NORMALIZER = re.compile(r"\s+")
@@ -167,7 +172,8 @@ class _BaseTokenizer:
 
             if add_special_tokens:
                 tokenized += [self.sep_token]
-                tags += [self.sep_token]
+                if return_tags:
+                    tags += [self.sep_token]
 
         if return_tags:
             return tokenized, tags
@@ -216,6 +222,9 @@ class _BaseTokenizer:
 
         if (src_lang is None) ^ (tgt_lang is None):
             src_lang = tgt_lang = None
+
+        if not hasattr(self, "pos_tagger"):
+            return_tags = False
 
         if isinstance(text, str):
             return self.encode(
@@ -408,13 +417,29 @@ class SentTokenizeMixin:
 
     def _set_sent_tokenizer(self):
         if self.lang in ["ko", "multi"]:
-            from kss import split_sentences
+            if is_available_kss():
+                from kss import split_sentences
 
-            self._ko_sent_tokenizer = split_sentences
+                self._ko_sent_tokenizer = split_sentences
+            else:
+                raise ModuleNotFoundError(
+                    "Please install kss with: `pip install kss`."
+                )
         if self.lang in ["en", "multi"]:
-            from nltk.tokenize import sent_tokenize
+            if is_available_nltk():
+                import nltk
+                try:
+                    nltk.data.find("tokenizers/punkt")
+                except LookipError:
+                    nltk.download("punkt")
 
-            self._en_sent_tokenizer = sent_tokenize
+                from nltk.tokenize import sent_tokenize
+
+                self._en_sent_tokenizer = sent_tokenize
+            else:
+                raise ModuleNotFoundError(
+                    "Please install nltk with: `pip install nltk`."
+                )
 
     def sent_tokenize(
         self,

@@ -228,7 +228,6 @@ class RobertaConverter(DoolyConverter):
     """ Roberta model Converter """
 
     name: str = "roberta"
-
     pororo_task_head_name = None
     hf_model_class = None
 
