@@ -36,15 +36,26 @@ else:
 
     class QueryParser:
         def __new__(cls, *args, **kwargs):
-            raise whoosh_not_found_err
+            if is_available_whoosh():
+                if not hasattr(cls, "_WhooshQueryParser"):
+                    from whoosh.qparser import QueryParser as _WhooshQueryParser
+
+                    cls._WhooshQueryParser = _WhooshQueryParser
+                return cls._WhooshQueryParser(*args, **kwargs)
+            else:
+                raise whoosh_not_found_err
 
     class WhooshIndex:
-        def __new__(cls, *args, **kwargs):
-            raise whoosh_not_found_err
-
         @classmethod
         def open_dir(cls, *args, **kwargs):
-            raise whoosh_not_found_err
+            if is_available_whoosh():
+                if not hasattr(cls, "_WhooshIndex"):
+                    from whoosh import index
+
+                    cls._WhooshIndex = index
+                return cls._WhooshIndex.open_dir(*args, **kwargs)
+            else:
+                raise whoosh_not_found_err
 
 
 class Wikipedia2VecItem(object):
