@@ -82,7 +82,7 @@ def batchify(*batch_args):
             batch_cols = Dataset.from_dict(batch_cols)
 
             padding_index = 0
-            if getattr(args[0], "tokenizer", None) is not None:
+            if hasattr(args[0], "tokenizer"):
                 padding_index = args[0].tokenizer.pad_token_id
 
             outputs = None
