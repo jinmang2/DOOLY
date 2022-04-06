@@ -38,14 +38,20 @@ class ZeroShotClassification(NaturalLanguageInference):
         self._contra_label_name = "contradiction"
         self._entail_label_name = "entailment"
 
-    @property
-    def _templates(self) -> Dict[str, str]:
-        return {
+        self._template = {
             "ko": "이 문장은 {label}에 관한 것이다.",
             "ja": "この文は、{label}に関するものである。",
             "zh": "这句话是关于{label}的。",
             "en": "This sentence is about {label}.",
         }
+
+    @property
+    def templates(self) -> Dict[str, str]:
+        return self._template
+
+    def set_template(self, template: Dict[str, str]):
+        assert self.lang in template
+        self._template = template
 
     @property
     def contra_label_name(self):
@@ -83,7 +89,7 @@ class ZeroShotClassification(NaturalLanguageInference):
 
         n_samples = len(sentences)
 
-        cands = [self._templates[self.lang].format(label=label) for label in labels]
+        cands = [self.templates[self.lang].format(label=label) for label in labels]
 
         # all_probs.shape == (n_samples, n_labels)
         all_probs = np.array([], dtype=np.float64).reshape(n_samples, 0)
