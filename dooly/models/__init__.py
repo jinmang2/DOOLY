@@ -5,6 +5,7 @@ from typing import Optional
 
 import torch
 
+import transformers
 from transformers.configuration_utils import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
 
@@ -187,18 +188,35 @@ class DoolyModel:
         with no_init_weights(_enable=_fast_init):
             model = model_class(config, **kwargs)
 
+        # There was an update to the from_pretrained method of models in v4.18.0.
+        # See fetch below.
+        # ref. https://github.com/huggingface/transformers/releases/tag/v4.18.0
+        # ref. https://github.com/huggingface/transformers/pull/16343
         if low_cpu_mem_usage:
-            model_class._load_state_dict_into_model_low_mem(
-                model, loaded_state_dict_keys, resolved_archive_file
+            kwargs = dict(
+                model=model,
+                loaded_state_dict_keys=loaded_state_dict_keys,
+                resolved_archive_file=resolved_archive_file,
             )
+            if version.parse(transformers.__version__) >= version.parse("4.18.0"):
+                load_pretrained_model = model_class._load_pretrained_model_low_mem
+            else:
+                load_pretrained_model = model_class._load_state_dict_into_model_low_mem
+            load_pretrained_model(**kwargs)
         else:
-            model, _, _, _, _ = model_class._load_state_dict_into_model(
-                model,
-                state_dict,
-                HUB_NAME,
+            kwargs = dict(
+                model=model,
+                state_dict=state_dict,
+                pretrained_model_name_or_path=HUB_NAME,
                 ignore_mismatched_sizes=False,
                 _fast_init=_fast_init,
             )
+            if version.parse(transformers.__version__) >= version.parse("4.18.0"):
+                kwargs.update(dict(resolved_archive_file=resolved_archive_file))
+                load_pretrained_model = model_class._load_pretrained_model
+            else:
+                load_pretrained_model = model_class._load_state_dict_into_model
+            model, _, _, _, _ = load_pretrained_model(**kwargs)
 
         # make sure token embedding weights are still tied if needed
         model.tie_weights()
