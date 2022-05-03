@@ -26,11 +26,16 @@ class TextClassification(DoolyTaskWithModelTokenzier):
 
         # Predict tags and ignore <s> & </s> tokens
         inputs = self._prepare_inputs(inputs)
-        logits = self._model(**inputs).logits
+        logits = self.model(**inputs).logits
+
+        # regression
+        if self.model.num_labels == 1:
+            return logits
+
         results = logits.argmax(dim=-1).cpu().numpy()
 
         # Label mapping
-        labelmap = lambda x: self._model.config.id2label[x]  # noqa
+        labelmap = lambda x: self.model.config.id2label[x]  # noqa
         labels = np.vectorize(labelmap)(results)
 
         # if show_probs:
