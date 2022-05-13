@@ -214,6 +214,15 @@ class DoolyModel:
             if version.parse(transformers.__version__) >= version.parse("4.18.0"):
                 kwargs.update(dict(resolved_archive_file=resolved_archive_file))
                 load_pretrained_model = model_class._load_pretrained_model
+                if version.parse(transformers.__version__) >= version.parse("4.19.0"):
+                    # Note that: `is_shared` 파라미터는 지원하지 않을 예정.
+                    # 그리고 향후 v5로 업데이트되며 문제가 생길 수 있는 코드임
+                    # 추가로 지금 코드가 너무 지저분함...
+                    # 해결 방안
+                    # 1. transformers에서 PreTrainedModel 클래스의 from_pretrained
+                    #    메서드에서 tokenizer처럼 subfolder를 지원하도록 PR 때린다.
+                    # 2. 내부 loading script method에 접근할 수 있는 방법을 찾아본다.
+                    kwargs.update(dict(loaded_keys=[k for k in state_dict.keys()]))
             else:
                 load_pretrained_model = model_class._load_state_dict_into_model
             model, _, _, _, _ = load_pretrained_model(**kwargs)
