@@ -295,7 +295,7 @@ class DoolyTaskBase:
 
 class DoolyTaskWithModelTokenzier(DoolyTaskBase):
     def finalize(self):
-        self._model.to(self.device)
+        self._model.to(self.config.device)
 
     @property
     def model(self):
