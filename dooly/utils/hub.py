@@ -11,7 +11,7 @@ DOOLY_HUB_NAME = os.environ.get("DOOLY_HUB_NAME", DEFAULT_HUB_NAME)
 
 hub_utils = [transformers.file_utils]
 if version.parse(transformers.__version__) >= version.parse("4.16.0"):
-    hub_utils += [getattr(transformers, "utils.hub")]
+    hub_utils += [transformers.utils.hub]
 
 HF_CO_PREFIX = hub_utils[0].HUGGINGFACE_CO_PREFIX
 

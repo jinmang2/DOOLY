@@ -8,7 +8,7 @@ def is_available_mecab():
         return _mecab is not None
     else:
         _eunjeon = importlib.util.find_spec("eunjeon")
-        return _mecab is not None and _eunjeon is not None
+        return _mecab is not None or _eunjeon is not None
 
 
 def is_available_ipadic():
