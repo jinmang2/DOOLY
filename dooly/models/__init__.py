@@ -1,12 +1,4 @@
-import json
-from packaging import version
-from contextlib import contextmanager
-from typing import Optional
-
-import torch
-
-import transformers
-from transformers.configuration_utils import PretrainedConfig
+from typing import Type
 from transformers.modeling_utils import PreTrainedModel
 
 from .modeling_bart import BartForConditionalGeneration
@@ -17,14 +9,7 @@ from .modeling_roberta import (
     RobertaForSequenceTagging,
     RobertaForSequenceClassification,
 )
-from ..build_utils import (
-    download_from_hf_hub,
-    CONFIG_USER_AGENT,
-    HUB_NAME,
-    MODEL_USER_AGENT,
-    CONFIG_NAME,
-    WEIGHTS_NAME,
-)
+from ..utils import register_subfolder, DOOLY_HUB_NAME
 
 
 DoolyModelHub = {
@@ -61,167 +46,86 @@ DoolyModelHub = {
 }
 DoolyModelHub["bt"] = DoolyModelHub["mt"]
 DoolyModelHub["zero_topic"] = DoolyModelHub["nli"]
+
 available_tasks = list(DoolyModelHub.keys())
 
-_init_weights = True
+
+def load_pretrained_model(
+    pretrained_model_name_or_path: str,
+    model_class: Type[PreTrainedModel],
+    **kwargs,
+) -> PreTrainedModel:
+    return model_class.from_pretrained(
+        pretrained_model_name_or_path, **kwargs
+    )
 
 
-@contextmanager
-def no_init_weights(_enable=True):
-    global _init_weights
-    if _enable:
-        _init_weights = False
-    try:
-        yield
-    finally:
-        _init_weights = True
+def load_model_from_dooly_hub(
+    subfolder: str,
+    model_class: Type[PreTrainedModel],
+    **kwargs,
+) -> PreTrainedModel:
 
-
-class DoolyModel:
-    """ Dooly Model """
-
-    @classmethod
-    def build_model(cls, task: str, lang: str, n_model: str, **kwargs):
-        assert (
-            task in available_tasks
-        ), f"Task `{task}` is not available. See here {available_tasks}."
-        available_langs = DoolyModelHub[task]
-        assert lang in available_langs, (
-            f"Language `{lang}` is not available in this task {task}. "
-            f"See here {available_langs}."
-        )
-        available_models = available_langs[lang]
-        assert n_model in available_models, (
-            f"Model `{n_model}` is not available in this task-lang pair. "
-            f"See here {available_models}."
+    @register_subfolder
+    def _load_pretrained(
+        pretrained_model_name_or_path: str, subfolder: str, **kwargs
+    ) -> PreTrainedModel:
+        return model_class.from_pretrained(
+            pretrained_model_name_or_path, **kwargs
         )
 
+    return _load_pretrained(
+        pretrained_model_name_or_path=DOOLY_HUB_NAME,
+        subfolder=subfolder, **kwargs
+    )
+
+
+def load_dooly_model(
+    pretrained_model_name_or_path: str = None,
+    model_class: Type[PreTrainedModel] = None,
+    task: str = None,
+    lang: str = None,
+    n_model: str = None,
+    **kwargs,
+) -> PreTrainedModel:
+    if pretrained_model_name_or_path is not None:
+        if model_class is None:
+            raise ValueError(
+                "If you are using the personal huggingface.co model, "
+                "`model_class` parameter is required."
+            )
+        return load_pretrained_model(
+            pretrained_model_name_or_path, model_class
+        )
+
+    if all([task is None and lang is None and n_model is None]):
+        raise ValueError(
+            "`task`, `lang`, and `n_model` parameters are required to "
+            "access the subfolder of dooly-hub.\nCheck your parameters! "
+            f"`task`: {task} `lang`: {lang} `n_model`: {n_model}."
+        )
+
+    assert (
+        task in available_tasks
+    ), f"Task `{task}` is not available. See here {available_tasks}."
+
+    available_langs = DoolyModelHub[task]
+    assert lang in available_langs, (
+        f"Language `{lang}` is not available in this task {task}. "
+        f"See here {available_langs}."
+    )
+
+    available_models = available_langs[lang]
+    assert n_model in available_models, (
+        f"Model `{n_model}` is not available in this task-lang pair. "
+        f"See here {available_models}."
+    )
+
+    subfolder = f"{task}/{lang}/{n_model}"
+
+    if model_class is None:
         model_class = available_models[n_model]
 
-        return cls._build_model(task, lang, n_model, model_class, **kwargs)
-
-    @classmethod
-    def _build_model_config(
-        cls,
-        task: str,
-        lang: str,
-        n_model: str,
-        config_class: PretrainedConfig,
-        revision: Optional[str] = None,
-        cache_dir: Optional[str] = None,
-        force_download: bool = False,
-        resume_download: bool = False,
-        **kwargs,
-    ) -> PretrainedConfig:
-        # Load from URL or cache if already cached
-        resolved_config_file = download_from_hf_hub(
-            model_id=HUB_NAME,
-            filename=CONFIG_NAME,
-            subfolder=f"{task}/{lang}/{n_model}",
-            revision=revision,
-            cache_dir=cache_dir,
-            force_download=force_download,
-            resume_download=resume_download,
-            user_agent=CONFIG_USER_AGENT,
-        )
-
-        # _dict_from_json_file
-        with open(resolved_config_file, "r", encoding="utf-8") as reader:
-            text = reader.read()
-        config_dict = json.loads(text)
-
-        return config_class.from_dict(config_dict, **kwargs)
-
-    @classmethod
-    def _build_model(
-        cls,
-        task: str,
-        lang: str,
-        n_model: str,
-        model_class: PreTrainedModel,
-        revision: Optional[str] = None,
-        cache_dir: Optional[str] = None,
-        force_download: bool = False,
-        resume_download: bool = False,
-        low_cpu_mem_usage: bool = False,
-        _fast_init: bool = True,
-        **kwargs,
-    ) -> PreTrainedModel:
-        if low_cpu_mem_usage:
-            assert version.parse(torch.__version__) > version.parse("1.9"), (
-                "torch>=1.9 is required for a normal functioning of this module"
-                f"using the low_cpu_mem_usage=={low_cpu_mem_usage}, "
-                f"but found torch=={torch.__version__}"
-            )
-
-        config_class: PretrainedConfig = model_class.config_class
-
-        config = cls._build_model_config(
-            task=task,
-            lang=lang,
-            n_model=n_model,
-            config_class=config_class,
-            revision=revision,
-            cache_dir=cache_dir,
-            force_download=force_download,
-            resume_download=resume_download,
-            **kwargs,
-        )
-
-        # Load from URL or cache if already cached
-        resolved_archive_file = download_from_hf_hub(
-            model_id=HUB_NAME,
-            filename=WEIGHTS_NAME,
-            subfolder=f"{task}/{lang}/{n_model}",
-            revision=revision,
-            cache_dir=cache_dir,
-            force_download=force_download,
-            resume_download=resume_download,
-            user_agent=MODEL_USER_AGENT,
-        )
-        state_dict = torch.load(resolved_archive_file, map_location="cpu")
-
-        if low_cpu_mem_usage:
-            loaded_state_dict_keys = [k for k in state_dict.keys()]
-            del state_dict  # free CPU memory - will reload again later
-
-        with no_init_weights(_enable=_fast_init):
-            model = model_class(config, **kwargs)
-
-        # There was an update to the from_pretrained method of models in v4.18.0.
-        # See fetch below.
-        # ref. https://github.com/huggingface/transformers/releases/tag/v4.18.0
-        # ref. https://github.com/huggingface/transformers/pull/16343
-        if low_cpu_mem_usage:
-            kwargs = dict(
-                model=model,
-                loaded_state_dict_keys=loaded_state_dict_keys,
-                resolved_archive_file=resolved_archive_file,
-            )
-            if version.parse(transformers.__version__) >= version.parse("4.18.0"):
-                load_pretrained_model = model_class._load_pretrained_model_low_mem
-            else:
-                load_pretrained_model = model_class._load_state_dict_into_model_low_mem
-            load_pretrained_model(**kwargs)
-        else:
-            kwargs = dict(
-                model=model,
-                state_dict=state_dict,
-                pretrained_model_name_or_path=HUB_NAME,
-                ignore_mismatched_sizes=False,
-                _fast_init=_fast_init,
-            )
-            if version.parse(transformers.__version__) >= version.parse("4.18.0"):
-                kwargs.update(dict(resolved_archive_file=resolved_archive_file))
-                load_pretrained_model = model_class._load_pretrained_model
-            else:
-                load_pretrained_model = model_class._load_state_dict_into_model
-            model, _, _, _, _ = load_pretrained_model(**kwargs)
-
-        # make sure token embedding weights are still tied if needed
-        model.tie_weights()
-
-        # Set model in evaluation mode to deactivate DropOut modules by default
-        model.eval()
-
-        return model
+    return load_model_from_dooly_hub(
+        subfolder=subfolder, model_class=model_class, **kwargs
+    )
