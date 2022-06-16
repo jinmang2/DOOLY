@@ -43,7 +43,7 @@ def load_pretrained_model(
 
 
 def load_model_from_dooly_hub(
-    subfolder: str, model_class: Type[transformers.PreTrainedModel], **kwargs,
+    subfolder: str, model_class: Type[transformers.PreTrainedModel], **kwargs
 ) -> transformers.PreTrainedModel:
     @register_subfolder
     def _load_pretrained(

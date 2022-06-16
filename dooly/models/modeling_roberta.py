@@ -165,7 +165,8 @@ class SegmentRobertaEmbeddings(nn.Module):
             config, "position_embedding_type", "absolute"
         )
         self.register_buffer(
-            "position_ids", torch.arange(config.max_position_embeddings).expand((1, -1))
+            "position_ids",
+            torch.arange(config.max_position_embeddings).expand((1, -1)),
         )
         if version.parse(torch.__version__) > version.parse("1.6.0"):
             self.register_buffer(
@@ -576,7 +577,10 @@ class RobertaForDialogueStateTracking(RobertaPreTrainedModel):
             loss = loss_gen + loss_gate
 
         if not return_dict:
-            output = (all_point_outputs, all_gate_outputs,) + outputs[2:]
+            output = (
+                all_point_outputs,
+                all_gate_outputs,
+            ) + outputs[2:]
             return ((loss,) + output) if loss is not None else output
 
         return DialogueStateTrackingOutput(

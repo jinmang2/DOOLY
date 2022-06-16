@@ -123,7 +123,7 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
         # tokenize source text
         batch_encodings = super().__call__(text, add_special_tokens=False, **kwargs)
         batch_encodings = self.add_language_tokens(
-            batch_encodings, src_lang, tgt_lang, add_special_tokens, return_tensors,
+            batch_encodings, src_lang, tgt_lang, add_special_tokens, return_tensors
         )
 
         # tokenize target text
