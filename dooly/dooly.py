@@ -77,7 +77,8 @@ class Dooly:
     def available_models(task: str) -> str:
         if task not in TASK_ALIASES:
             raise KeyError(
-                f"Unknown task {task}. Please check available models via `available_tasks()`."
+                f"Unknown task {task}. "
+                "Please check available models via `available_tasks()`."
             )
         task_cls_path = DoolyTaskHub[TASK_ALIASES[normalize_task(task)]]
         task_cls = _locate(task_cls_path)

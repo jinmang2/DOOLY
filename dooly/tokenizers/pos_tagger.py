@@ -6,7 +6,6 @@ import inspect
 from typing import List, Tuple, Union, Dict, Callable, Any
 
 from transformers import BatchEncoding
-from transformers.tokenization_utils_base import TruncationStrategy
 
 from .base import DoolyPreTrainedTokenizer
 from ..utils.import_utils import (
@@ -378,7 +377,7 @@ class DoolyPosDpTokenizer(DoolyPreTrainedTokenizer):
             first_ids, first_tag_ids = self._get_input_ids(ids, **kwargs)
             second_ids = second_tag_ids = None
             if pair_ids is not None:
-                second_ids, second_tag_ids = _get_input_ids(pair_ids, **kwargs)
+                second_ids, second_tag_ids = self._get_input_ids(pair_ids, **kwargs)
             input_ids.append((first_ids, second_ids))
             tag_ids.append((first_tag_ids, second_tag_ids))
 

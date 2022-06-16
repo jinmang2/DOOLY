@@ -1,7 +1,6 @@
 from typing import List
 from functools import lru_cache
 
-from dataclasses import dataclass
 import transformers
 from transformers import GPT2TokenizerFast
 from transformers import BertTokenizer, BertJapaneseTokenizer

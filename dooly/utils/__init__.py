@@ -5,6 +5,12 @@ from .hub import (  # noqa # pylint: disable=unused-import
     DOOLY_HUB_NAME,
 )
 
-# is_available_{module} methods
-from .import_utils import *
+from .import_utils import (  # noqa # pylint: disable=unused-import
+    is_available_mecab,
+    is_available_ipadic,
+    is_available_fugashi,
+    is_available_jieba,
+    is_available_nltk,
+    is_available_kss,
+)
 from .import_utils import _locate  # noqa
