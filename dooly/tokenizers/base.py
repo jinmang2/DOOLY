@@ -43,9 +43,7 @@ class SentTokenizeMixin:
                 )
 
     def sent_tokenize(
-        self,
-        texts: InputTexts,
-        langs: Optional[InputTexts] = None,
+        self, texts: InputTexts, langs: Optional[InputTexts] = None
     ) -> List[List[str]]:
         if isinstance(texts, str):
             texts = [texts]
@@ -121,7 +119,8 @@ class DoolyPreTrainedTokenizer(PreTrainedTokenizer, SentTokenizeMixin):
         with open(vocab_file, "r", encoding="utf-8") as f:
             self.vocab = json.load(f)
         self.ids_to_tokens = collections.OrderedDict(
-            [(ids, tok) for tok, ids in self.vocab.items()])
+            [(ids, tok) for tok, ids in self.vocab.items()]
+        )
 
         replacement = kwargs.pop("replacement", None)
         self.replacement = replacement or self.replacement

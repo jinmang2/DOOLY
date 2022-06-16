@@ -268,8 +268,7 @@ class DoolyPosDpTokenizer(DoolyPreTrainedTokenizer):
         text = text.strip()
         pairs = self.pos_tagger.pos(text, return_surface=True)
         tokens = ["<s>", self.replacement] + [
-            pair[0] if pair[0] != " " else self.replacement
-            for pair in pairs
+            pair[0] if pair[0] != " " else self.replacement for pair in pairs
         ]
         tags = [
             pair[1] if pair[0] != " " else pairs[i + 1][1]
@@ -343,10 +342,7 @@ class DoolyPosDpTokenizer(DoolyPreTrainedTokenizer):
             second_ids, second_tag_ids = self._get_input_ids(text_pair, **kwargs)
 
         batch_outputs = self.prepare_for_model(
-            ids=first_ids,
-            pair_ids=second_ids,
-            prepend_batch_axis=True,
-            **orig_kwargs,
+            ids=first_ids, pair_ids=second_ids, prepend_batch_axis=True, **orig_kwargs
         )
         pos_outputs = self.prepare_for_model(
             ids=first_tag_ids,
@@ -368,7 +364,9 @@ class DoolyPosDpTokenizer(DoolyPreTrainedTokenizer):
             raise NotImplementedError(
                 "is_split_into_words is not available when using Pos Tokenizer. "
             )
-        orig_kwargs, kwargs = self._sanitize_kwargs(super()._batch_encode_plus, **kwargs)
+        orig_kwargs, kwargs = self._sanitize_kwargs(
+            super()._batch_encode_plus, **kwargs
+        )
         input_ids = []
         tag_ids = []
         for ids_or_pair_ids in batch_text_or_text_pairs:

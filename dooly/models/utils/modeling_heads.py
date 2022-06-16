@@ -68,9 +68,7 @@ class DependencyParseHead(nn.Module):
             dropout=classifier_dropout,
         )
         self.head_attn_post = nn.MultiheadAttention(
-            embed_dim=config.hidden_size,
-            num_heads=1,
-            dropout=classifier_dropout,
+            embed_dim=config.hidden_size, num_heads=1, dropout=classifier_dropout
         )
 
     def forward(self, features, masks=None, **kwargs):
@@ -111,9 +109,7 @@ class SlotGenerator(nn.Module):
         )  # shared with encoder
 
         self.gru = nn.GRU(
-            input_size=self.hidden_size,
-            hidden_size=self.hidden_size,
-            batch_first=True,
+            input_size=self.hidden_size, hidden_size=self.hidden_size, batch_first=True
         )
 
         self.gating2id = {"none": 0, "dontcare": 1, "ptr": 2, "yes": 3, "no": 4}

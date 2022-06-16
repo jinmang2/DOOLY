@@ -22,7 +22,8 @@ def register_subfolder(func: Callable) -> Callable:
     def wrapper(*args, **kwargs) -> Any:
         subfolder = kwargs.pop("subfolder", None)
         pretrained_model_name_or_path = kwargs.pop(
-            "pretrained_model_name_or_path", DOOLY_HUB_NAME)
+            "pretrained_model_name_or_path", DOOLY_HUB_NAME
+        )
         _orig_hf_co_prefixes = []
         if pretrained_model_name_or_path == DOOLY_HUB_NAME:
             for hub_util in hub_utils:
@@ -30,10 +31,12 @@ def register_subfolder(func: Callable) -> Callable:
                 hub_util.HUGGINGFACE_CO_PREFIX = BASE_PREFIX
                 hub_util.HUGGINGFACE_CO_PREFIX += f"{subfolder}/" if subfolder else ""
                 hub_util.HUGGINGFACE_CO_PREFIX += "{filename}"
-        kwargs.update(dict(
-            subfolder=subfolder,
-            pretrained_model_name_or_path=pretrained_model_name_or_path,
-        ))
+        kwargs.update(
+            dict(
+                subfolder=subfolder,
+                pretrained_model_name_or_path=pretrained_model_name_or_path,
+            )
+        )
         output = func(*args, **kwargs)
         for i, hf_co_prefix in enumerate(_orig_hf_co_prefixes):
             hub_utils[i].HUGGINGFACE_CO_PREFIX = hf_co_prefix
@@ -52,9 +55,7 @@ def recover_original_hf_bucket_url():
         hub_util.HUGGINGFACE_CO_PREFIX = bucket_url_with_subfolder
 
 
-def download_from_hf_hub(
-    filename: str, subfolder: str, hub_name: str = None
-) -> str:
+def download_from_hf_hub(filename: str, subfolder: str, hub_name: str = None) -> str:
     hub_name = hub_name or DOOLY_HUB_NAME
     hf_co_resolved_file = hub_utils[0].hf_bucket_url(
         model_id=hub_name, filename=filename, subfolder=subfolder

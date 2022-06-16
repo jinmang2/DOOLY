@@ -38,26 +38,19 @@ def build_custom_roberta_tokenizer(
     import tokenizers
 
     bpe_obj = tokenizers.models.BPE.from_file(
-        vocab_filename,
-        merges_filename,
-        unk_token="<unk>",
-        fuse_unk=True,
+        vocab_filename, merges_filename, unk_token="<unk>", fuse_unk=True
     )
     # @TODO: Unigram
     _tokenizer = tokenizers.Tokenizer(bpe_obj)
     _tokenizer.normalizer = tokenizers.normalizers.NFKC()
     _tokenizer.pre_tokenizer = tokenizers.pre_tokenizers.Metaspace(
-        replacement=replacement,
-        add_prefix_space=add_prefix_space,
+        replacement=replacement, add_prefix_space=add_prefix_space,
     )
     _tokenizer.post_processor = tokenizers.processors.RobertaProcessing(
-        sep=("</s>", 2),
-        cls=("<s>", 0),
-        add_prefix_space=False,
+        sep=("</s>", 2), cls=("<s>", 0), add_prefix_space=False
     )
     _tokenizer.decoder = tokenizers.decoders.Metaspace(
-        replacement=replacement,
-        add_prefix_space=add_prefix_space,
+        replacement=replacement, add_prefix_space=add_prefix_space
     )
 
     return RobertaTokenizerFast(
@@ -72,8 +65,7 @@ class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
         if isinstance(texts, str):
             texts = [texts]
         encodings = self.backend_tokenizer.encode_batch(
-            texts,
-            add_special_tokens=False,
+            texts, add_special_tokens=False
         )
         results = []
         for text, encoding in zip(texts, encodings):

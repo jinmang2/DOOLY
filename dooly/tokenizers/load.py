@@ -5,12 +5,8 @@ from ..utils import _locate, DOOLY_HUB_NAME
 
 
 DoolyTokenizerHub = {
-    "dp": {
-        "ko": {"posbert.base": "pos_tagger.DoolyPosDpTokenizer"},
-    },
-    "mrc": {
-        "ko": {"brainbert.base": "fast.RobertaTokenizerFast"},
-    },
+    "dp": {"ko": {"posbert.base": "pos_tagger.DoolyPosDpTokenizer"}},
+    "mrc": {"ko": {"brainbert.base": "fast.RobertaTokenizerFast"}},
     "mt": {
         "multi": {
             "transformer.large.mtpg": "char.DoolyCharSeq2SeqNmtTokenizer",
@@ -29,12 +25,8 @@ DoolyTokenizerHub = {
         "ja": {"jaberta.base": "bpe.DoolyBertJaTokenizer"},
         "zh": {"zhberta.base": "bpe.DoolyBertZhTokenizer"},
     },
-    "qg": {
-        "ko": {"kobart.base": "bpe.PreTrainedTokenizerFast"},
-    },
-    "wsd": {
-        "ko": {"transformer.large": "char.DoolyCharSeq2SeqWsdTokenizer"},
-    },
+    "qg": {"ko": {"kobart.base": "bpe.PreTrainedTokenizerFast"}},
+    "wsd": {"ko": {"transformer.large": "char.DoolyCharSeq2SeqWsdTokenizer"}},
 }
 DoolyTokenizerHub["bt"] = DoolyTokenizerHub["mt"]
 DoolyTokenizerHub["zero_topic"] = DoolyTokenizerHub["nli"]
@@ -47,27 +39,19 @@ def load_pretrained_tokenizer(
     tokenizer_class: Type[transformers.PreTrainedTokenizer],
     **kwargs,
 ) -> transformers.PreTrainedTokenizer:
-    return tokenizer_class.from_pretrained(
-        pretrained_model_name_or_path, **kwargs
-    )
+    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, **kwargs)
 
 
 def load_tokenizer_from_dooly_hub(
-    subfolder: str,
-    tokenizer_class: Type[transformers.PreTrainedTokenizer],
-    **kwargs,
+    subfolder: str, tokenizer_class: Type[transformers.PreTrainedTokenizer], **kwargs
 ) -> transformers.PreTrainedTokenizer:
-
-    def _load_pretrained(
-        pretrained_model_name_or_path: str, subfolder: str, **kwargs
-    ):
+    def _load_pretrained(pretrained_model_name_or_path: str, subfolder: str, **kwargs):
         return tokenizer_class.from_pretrained(
             pretrained_model_name_or_path, subfolder=subfolder, **kwargs
         )
 
     return _load_pretrained(
-        pretrained_model_name_or_path=DOOLY_HUB_NAME,
-        subfolder=subfolder, **kwargs
+        pretrained_model_name_or_path=DOOLY_HUB_NAME, subfolder=subfolder, **kwargs
     )
 
 

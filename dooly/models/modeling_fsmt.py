@@ -24,10 +24,7 @@ def invert_mask(attention_mask):
 
 class FSMTConfig(FSMTConfig):
     def __init__(
-        self,
-        encoder_pre_layernorm=False,
-        decoder_pre_layernorm=False,
-        **kwargs,
+        self, encoder_pre_layernorm=False, decoder_pre_layernorm=False, **kwargs
     ):
         self.encoder_pre_layernorm = encoder_pre_layernorm
         self.decoder_pre_layernorm = decoder_pre_layernorm

@@ -576,10 +576,7 @@ class RobertaForDialogueStateTracking(RobertaPreTrainedModel):
             loss = loss_gen + loss_gate
 
         if not return_dict:
-            output = (
-                all_point_outputs,
-                all_gate_outputs,
-            ) + outputs[2:]
+            output = (all_point_outputs, all_gate_outputs,) + outputs[2:]
             return ((loss,) + output) if loss is not None else output
 
         return DialogueStateTrackingOutput(

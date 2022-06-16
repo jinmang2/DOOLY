@@ -33,7 +33,7 @@ class DoolyCharTokenizer(DoolyPreTrainedTokenizer):
         tokenized = list()
         for i in range(len(x)):
             if x[i] == " ":
-                x[i+1] = self.replacement + f"{x[i+1]}"  # noqa
+                x[i + 1] = self.replacement + f"{x[i + 1]}"
                 continue
             else:
                 tokenized.append(x[i])
@@ -58,7 +58,6 @@ class DoolyCharTokenizer(DoolyPreTrainedTokenizer):
 
 
 class DoolyCharBertTokenizer(DoolyCharTokenizer):
-
     def _tokenize(self, text: str, **kwargs) -> List[str]:
         return self._tokenize_chatbpe_style(text)
 
@@ -68,7 +67,6 @@ class DoolyCharBertTokenizer(DoolyCharTokenizer):
 #   src_tokens: token_ids_0 + [</s>]
 #   tgt_tokens: ??? -> 분석 필요
 class DoolyCharSeq2SeqWsdTokenizer(DoolyCharTokenizer):
-
     def _tokenize(self, text: str, **kwargs) -> List[str]:
         return self._tokenize_whitespace_style(text)
 
@@ -90,27 +88,29 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
       src_tokens: [src_lang_code] + token_ids_0 + [tgt_lang_code] + [</s>]
       tgt_tokens: [<s>] + token_ids_1 + [</s>]
     """
+
     __LANG_TO_CODE__ = {
-        'ko': '[ko_KR]',
-        'en': '[en_XX]',
-        'ja': '[ja_XX]',
-        'zh': '[zh_CN]',
+        "ko": "[ko_KR]",
+        "en": "[en_XX]",
+        "ja": "[ja_XX]",
+        "zh": "[zh_CN]",
     }
 
     def __init__(self, **kwargs):
         super().__init__(
-            additional_special_tokens=list(self.lang_to_code.values()),
-            **kwargs
+            additional_special_tokens=list(self.lang_to_code.values()), **kwargs
         )
 
     def _tokenize(self, text: str, **kwargs) -> List[str]:
         return self._tokenize_whitespace_style(text)
 
     def __call__(
-        self, text, text_pair,
+        self,
+        text,
+        text_pair,
         src_lang: Union[str, List[str]] = None,
         tgt_lang: Union[str, List[str]] = None,
-        **kwargs
+        **kwargs,
     ) -> BatchEncoding:
         if src_lang is None and tgt_lang is None:
             return super().__call__(text, text_pair, **kwargs)
@@ -121,16 +121,15 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
         return_tensors = kwargs.get("return_tensors", None)
 
         # tokenize source text
-        batch_encodings = super().__call__(
-            text, add_special_tokens=False, **kwargs)
+        batch_encodings = super().__call__(text, add_special_tokens=False, **kwargs)
         batch_encodings = self.add_language_tokens(
-            batch_encodings, src_lang, tgt_lang,
-            add_special_tokens, return_tensors,
+            batch_encodings, src_lang, tgt_lang, add_special_tokens, return_tensors,
         )
 
         # tokenize target text
         label_encodings = super().__call__(
-            text_pair, add_special_tokens=add_special_tokens, **kwargs)
+            text_pair, add_special_tokens=add_special_tokens, **kwargs
+        )
 
         batch_encodings["labels"] = label_encodings["input_ids"]
         return batch_encodings
@@ -191,8 +190,7 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
             tgt_lang = tgt_langs[i]
 
             maximum_idx = [
-                i for i, val in enumerate(_input_ids)
-                if val != self.pad_token_id
+                i for i, val in enumerate(_input_ids) if val != self.pad_token_id
             ]
             idx_to_add = 0
             if len(maximum_idx) > 0:
@@ -203,19 +201,20 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
             sep = self.sep_token_id
 
             _input_ids = self.insert_tokens(
-                _input_ids, [src_lang], [tgt_lang, sep],
-                idx_to_add, return_tensors
+                _input_ids, [src_lang], [tgt_lang, sep], idx_to_add, return_tensors
             )
             token_added_ids.append(_input_ids)
 
             if attention_mask is not None:
                 _attention_mask = self.insert_tokens(
-                    _attention_mask, [1], [1, 1], idx_to_add, return_tensors)
+                    _attention_mask, [1], [1, 1], idx_to_add, return_tensors
+                )
                 token_added_masks.append(_attention_mask)
 
             if token_type_ids is not None:
                 _token_type_ids = self.insert_tokens(
-                    _token_type_ids, [0], [0, 0], idx_to_add, return_tensors)
+                    _token_type_ids, [0], [0, 0], idx_to_add, return_tensors
+                )
                 token_added_type_ids.append(_token_type_ids)
 
         def unsqueeze_and_cat(tensorlist: List[torch.Tensor]) -> torch.Tensor:

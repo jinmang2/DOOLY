@@ -5,12 +5,8 @@ from ..utils import _locate, register_subfolder, DOOLY_HUB_NAME
 
 
 DoolyModelHub = {
-    "dp": {
-        "ko": {"posbert.base": "modeling_roberta.RobertaForDependencyParsing"},
-    },
-    "mrc": {
-        "ko": {"brainbert.base": "modeling_roberta.RobertaForSpanPrediction"},
-    },
+    "dp": {"ko": {"posbert.base": "modeling_roberta.RobertaForDependencyParsing"}},
+    "mrc": {"ko": {"brainbert.base": "modeling_roberta.RobertaForSpanPrediction"}},
     "mt": {
         "multi": {
             "transformer.large.mtpg": "modeling_fsmt.FSMTForConditionalGeneration",
@@ -29,12 +25,8 @@ DoolyModelHub = {
         "ja": {"jaberta.base": "modeling_roberta.RobertaForSequenceClassification"},
         "zh": {"zhberta.base": "modeling_roberta.RobertaForSequenceClassification"},
     },
-    "qg": {
-        "ko": {"kobart.base": "modeling_bart.BartForConditionalGeneration"},
-    },
-    "wsd": {
-        "ko": {"transformer.large": "modeling_fsmt.FSMTForConditionalGeneration"},
-    },
+    "qg": {"ko": {"kobart.base": "modeling_bart.BartForConditionalGeneration"}},
+    "wsd": {"ko": {"transformer.large": "modeling_fsmt.FSMTForConditionalGeneration"}},
 }
 DoolyModelHub["bt"] = DoolyModelHub["mt"]
 DoolyModelHub["zero_topic"] = DoolyModelHub["nli"]
@@ -47,28 +39,20 @@ def load_pretrained_model(
     model_class: Type[transformers.PreTrainedModel],
     **kwargs,
 ) -> transformers.PreTrainedModel:
-    return model_class.from_pretrained(
-        pretrained_model_name_or_path, **kwargs
-    )
+    return model_class.from_pretrained(pretrained_model_name_or_path, **kwargs)
 
 
 def load_model_from_dooly_hub(
-    subfolder: str,
-    model_class: Type[transformers.PreTrainedModel],
-    **kwargs,
+    subfolder: str, model_class: Type[transformers.PreTrainedModel], **kwargs,
 ) -> transformers.PreTrainedModel:
-
     @register_subfolder
     def _load_pretrained(
         pretrained_model_name_or_path: str, subfolder: str, **kwargs
     ) -> transformers.PreTrainedModel:
-        return model_class.from_pretrained(
-            pretrained_model_name_or_path, **kwargs
-        )
+        return model_class.from_pretrained(pretrained_model_name_or_path, **kwargs)
 
     return _load_pretrained(
-        pretrained_model_name_or_path=DOOLY_HUB_NAME,
-        subfolder=subfolder, **kwargs
+        pretrained_model_name_or_path=DOOLY_HUB_NAME, subfolder=subfolder, **kwargs
     )
 
 

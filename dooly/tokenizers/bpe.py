@@ -96,8 +96,9 @@ class DoolyGPT2TokenizerFast(DoolyPreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens: List[str]) -> str:
         """Converts a sequence of tokens (string) in a single string."""
         text = "".join(tokens)
-        text = bytearray([self.byte_decoder[c] for c in text])\
-            .decode("utf-8", errors=self.errors)
+        text = bytearray([self.byte_decoder[c] for c in text]).decode(
+            "utf-8", errors=self.errors
+        )
         return text
 
 
@@ -118,8 +119,7 @@ class DoolyBertTokenizer(DoolyPreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens: List[str]) -> str:
         """Converts a sequence of tokens (string) in a single string."""
         text = "".join(
-            [token.replace(" ", "").replace(self.replacement, "")
-             for token in tokens]
+            [token.replace(" ", "").replace(self.replacement, "") for token in tokens]
         )
         return text
 
@@ -133,13 +133,15 @@ class DoolyBertJaTokenizer(DoolyBertTokenizer):
             import ipadic  # noqa
         else:
             raise ModuleNotFoundError(
-                "Please install ipadic with: `pip install ipadic`")
+                "Please install ipadic with: `pip install ipadic`"
+            )
 
         if is_available_fugashi():
             import fugashi  # noqa
         else:
             raise ModuleNotFoundError(
-                "Please install fugashi with: `pip install fugashi`")
+                "Please install fugashi with: `pip install fugashi`"
+            )
 
         super().__init__(**kwargs)
 
