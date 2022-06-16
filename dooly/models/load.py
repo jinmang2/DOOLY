@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union
 import transformers
 
 from ..utils import _locate, register_subfolder, DOOLY_HUB_NAME
@@ -58,7 +58,7 @@ def load_model_from_dooly_hub(
 
 def load_dooly_model(
     pretrained_model_name_or_path: str = None,
-    model_class: Type[transformers.PreTrainedModel] = None,
+    model_class: Union[str, Type[transformers.PreTrainedModel]] = None,
     task: str = None,
     lang: str = None,
     n_model: str = None,
@@ -101,6 +101,10 @@ def load_dooly_model(
 
     if model_class is None:
         module_path = "dooly.models." + available_models[n_model]
+    elif isinstance(model_class, str):
+        module_path = model_class
+
+    if not issubclass(model_class, transformers.PreTrainedModel):
         model_class = _locate(module_path)
 
     return load_model_from_dooly_hub(

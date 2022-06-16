@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union
 
 import transformers
 from ..utils import _locate, DOOLY_HUB_NAME
@@ -57,7 +57,7 @@ def load_tokenizer_from_dooly_hub(
 
 def load_dooly_tokenizer(
     pretrained_model_name_or_path: str = None,
-    tokenizer_class: Type[transformers.PreTrainedTokenizer] = None,
+    tokenizer_class: Union[str, Type[transformers.PreTrainedTokenizer]] = None,
     task: str = None,
     lang: str = None,
     n_model: str = None,
@@ -103,6 +103,10 @@ def load_dooly_tokenizer(
 
     if tokenizer_class is None:
         module_path = "dooly.tokenizers." + available_models[n_model]
+    elif isinstance(tokenizer_class, str):
+        module_path = tokenizer_class
+
+    if not issubclass(tokenizer_class, transformers.PreTrainedTokenizer):
         tokenizer_class = _locate(module_path)
 
     kwargs.update({"task": task, "lang": lang, "n_model": n_model})
