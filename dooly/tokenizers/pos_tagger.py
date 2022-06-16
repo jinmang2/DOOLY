@@ -1,12 +1,13 @@
-import re
 import os
+import re
 import abc
-from typing import List, Tuple, Union, Dict
+from typing import List, Tuple, Union, Dict, Callable, Any
 
-import torch
+from transformers import BatchEncoding
+from transformers.tokenization_utils_base import TruncationStrategy
 
-from .base import Tokenizer
-from .import_utils import (
+from .base import DoolyPreTrainedTokenizer
+from ..utils.import_utils import (
     is_available_mecab,
     is_available_ipadic,
     is_available_fugashi,
@@ -14,11 +15,6 @@ from .import_utils import (
     is_available_nltk,
 )
 
-
-InputTexts = Union[str, List[str]]
-TokenizedOutput = Union[List[str], List[List[str]]]
-EncodedOutput = Union[List[int], List[List[int]], torch.Tensor]
-PaddedOutput = Union[List[List[int]], torch.Tensor]
 
 PosTagResult = Union[Tuple[str, str], str]
 
@@ -249,25 +245,30 @@ PosTaggerMap = {
 }
 
 
-class PosDpTokenizer(Tokenizer):
-    def __init__(self, *args, **kwargs):
-        pos_vocab: Dict[str, int] = kwargs.pop("pos_vocab", None)
+class DoolyPosDpTokenizer(DoolyPreTrainedTokenizer):
+    vocab_files_names = {
+        "vocab_file": "vocab.json",
+        "pos_vocab_file": "pos_vocab.json",
+    }
+    replacement: str = "▃"
 
-        super().__init__(*args, **kwargs)
+    def __init__(self, pos_vocab_file, **kwargs):
+        super().__init__(**kwargs)
 
-        if pos_vocab is None:
-            raise ValueError("`pos_vocab` should be required.")
+        with open(pos_vocab_file, "r", encoding="utf-8") as f:
+            self.pos_vocab = json.load(f)
 
-        self.pos_vocab = pos_vocab
-
-        # set pos_tagger
+        # set pos tagger
         tagger_cls = PosTaggerMap.get(self.lang, None)
         self.pos_tagger = tagger_cls()
 
-    def _tokenize(self, text: str) -> Tuple[List[str], List[str]]:
+    def _tokenize(self, text: str, **kwargs) -> Tuple[List[str], List[str]]:
         text = text.strip()
         pairs = self.pos_tagger.pos(text, return_surface=True)
-        tokens = ["<s>", "▃"] + [pair[0] if pair[0] != " " else "▃" for pair in pairs]
+        tokens = ["<s>", self.replacement] + [
+            pair[0] if pair[0] != " " else self.replacement
+            for pair in pairs
+        ]
         tags = [
             pair[1] if pair[0] != " " else pairs[i + 1][1]
             for i, pair in enumerate(pairs)
@@ -282,3 +283,111 @@ class PosDpTokenizer(Tokenizer):
             res_tags.append(tag)
 
         return tokens, res_tags
+
+    @staticmethod
+    def _sanitize_kwargs(
+        method: Callable, **kwargs
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        orig_kwargs = {}
+        for arg_name in inspect.getfullargspec(method).args:
+            val = kwargs.pop(arg_name, None)
+            if val is not None:
+                orig_kwargs[arg_name] = val
+        return orig_kwargs, kwargs
+
+    def convert_tags_to_ids(
+        self, tokens: Union[str, List[str]]
+    ) -> Union[int, List[int]]:
+        if tokens is None:
+            return None
+
+        def _convert_tag_to_id(token: str) -> int:
+            if token is None:
+                return None
+            return self.pos_vocab.get(token, self.unk_token_id)
+
+        if isinstance(tokens, str):
+            return _convert_tag_to_id(tokens)
+
+        ids = []
+        for token in tokens:
+            ids.append(_convert_tag_to_id(token))
+        return ids
+
+    def _get_input_ids(self, text: str, **kwargs) -> Tuple[List[int], List[int]]:
+        tokens, tags = self.tokenize(text, **kwargs)
+        return (
+            self.convert_tokens_to_ids(tokens),
+            self.convert_tags_to_ids(tags),
+        )
+
+    def _encode_plus(self, text: str, text_pair: str, **kwargs) -> BatchEncoding:
+        if kwargs.pop("return_offsets_mapping", False):
+            raise NotImplementedError(
+                "return_offset_mapping is not available when using Python tokenizers. "
+                "To use this feature, change your tokenizer to one deriving from "
+                "transformers.PreTrainedTokenizerFast. "
+                "More information on available tokenizers at "
+                "https://github.com/huggingface/transformers/pull/2674"
+            )
+        if kwargs.pop("is_split_into_words", False):
+            raise NotImplementedError(
+                "is_split_into_words is not available when using Pos Tokenizer. "
+            )
+        orig_kwargs, kwargs = self._sanitize_kwargs(super()._encode_plus, **kwargs)
+        first_ids, first_tag_ids = self._get_input_ids(text, **kwargs)
+        second_ids = second_tag_ids = None
+        if text_pair is not None:
+            second_ids, second_tag_ids = self._get_input_ids(text_pair, **kwargs)
+
+        batch_outputs = self.prepare_for_model(
+            ids=first_ids,
+            pair_ids=second_ids,
+            prepend_batch_axis=True,
+            **orig_kwargs,
+        )
+        pos_outputs = self.prepare_for_model(
+            ids=first_tag_ids,
+            pair_ids=second_tag_ids,
+            prepend_batch_axis=True,
+            **orig_kwargs,
+        )
+        batch_outputs.update({"segment_labels": pos_outputs["input_ids"]})
+        return batch_outputs
+
+    def _batch_encode_plus(self, batch_text_or_text_pairs, **kwargs) -> BatchEncoding:
+        if kwargs.pop("return_offsets_mapping", False):
+            raise NotImplementedError(
+                "return_offset_mapping is not available when using Python tokenizers. "
+                "To use this feature, change your tokenizer to one deriving from "
+                "transformers.PreTrainedTokenizerFast."
+            )
+        if kwargs.pop("is_split_into_words", False):
+            raise NotImplementedError(
+                "is_split_into_words is not available when using Pos Tokenizer. "
+            )
+        orig_kwargs, kwargs = self._sanitize_kwargs(super()._batch_encode_plus, **kwargs)
+        input_ids = []
+        tag_ids = []
+        for ids_or_pair_ids in batch_text_or_text_pairs:
+            if not isinstance(ids_or_pair_ids, (list, tuple)):
+                ids, pair_ids = ids_or_pair_ids, None
+            else:
+                ids, pair_ids = ids_or_pair_ids
+
+            first_ids, first_tag_ids = self._get_input_ids(ids, **kwargs)
+            second_ids = second_tag_ids = None
+            if pair_ids is not None:
+                second_ids, second_tag_ids = _get_input_ids(pair_ids, **kwargs)
+            input_ids.append((first_ids, second_ids))
+            tag_ids.append((first_tag_ids, second_tag_ids))
+
+        batch_outputs = self._batch_prepare_for_model(input_ids, **orig_kwargs)
+        pos_outputs = self._batch_prepare_for_model(tag_ids, **orig_kwargs)
+        batch_outputs.update({"segment_labels": pos_outputs["input_ids"]})
+        return BatchEncoding(batch_outputs)
+
+    def convert_tokens_to_string(self, tokens: List[str]) -> str:
+        """Converts a sequence of tokens (string) in a single string."""
+        text = "".join(tokens)
+        return text.replace(self.replacement, " ").strip()
