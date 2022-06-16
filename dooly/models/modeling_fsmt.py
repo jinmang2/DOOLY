@@ -12,8 +12,6 @@ from transformers.models.fsmt.modeling_fsmt import (
 from transformers.modeling_outputs import (
     BaseModelOutput,
     BaseModelOutputWithPastAndCrossAttentions,
-    # Seq2SeqLMOutput,
-    # Seq2SeqModelOutput,
 )
 from transformers.deepspeed import is_deepspeed_zero3_enabled
 

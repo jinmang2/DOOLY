@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from transformers import GPT2TokenizerFast
 from transformers import BertTokenizer, BertJapaneseTokenizer
 
-from . import load_dooly_tokenizer
+from .load import load_dooly_tokenizer
 from .base import DoolyPreTrainedTokenizer
 from ..utils import recover_original_hf_bucket_url
 from ..utils.import_utils import is_available_ipadic, is_available_fugashi

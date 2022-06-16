@@ -1,6 +1,5 @@
 from typing import List, Optional
 from tokenizers import Encoding
-from transformers import PreTrainedTokenizerBase  # noqa
 from transformers import RobertaTokenizerFast as _RobertaTokenizerFast
 from transformers import PreTrainedTokenizerFast as _PreTrainedTokenizerFast
 
