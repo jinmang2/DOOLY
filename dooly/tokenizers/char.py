@@ -1,5 +1,5 @@
 import re
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 
 import torch
 from transformers import BatchEncoding, TensorType
@@ -19,10 +19,14 @@ class DoolyCharTokenizer(DoolyPreTrainedTokenizer):
         text = "".join(tokens)
         return text.replace(" ", "").replace(self.replacement, " ").strip()
 
-
-class DoolyCharBertTokenizer(DoolyCharTokenizer):
-
-    def _tokenize(self, text: str, **kwargs) -> List[str]:
+    def _tokenize_chatbpe_style(self, text: str) -> List[str]:
+        """e.g.,
+        >>> text = "손흥민은 28세의 183 센티미터, 77 킬로그램이며, 현재 주급은 약 3억 원이다."
+        >>> tokenizer._tokenize_charbpe_style(text)
+        ['▁손', '흥', '민', '은', '▁2', '8', '세', '의', '▁1', '8', '3', '▁센', '티', '미', '터',
+         ',', '▁7', '7', '▁킬', '로', '그', '램', '이', '며', ',', '▁현', '재', '▁주', '급', '은',
+         '▁약', '▁3', '억', '▁원', '이', '다', '.']
+        """
         x = text.strip()
         x = [c for c in self._normalize_space(x)]
 
@@ -36,6 +40,28 @@ class DoolyCharBertTokenizer(DoolyCharTokenizer):
         tokenized[0] = self.replacement + f"{tokenized[0]}"
         return tokenized
 
+    def _tokenize_whitespace_style(self, text: str) -> List[str]:
+        """e.g.,
+        >>> text = "손흥민은 28세의 183 센티미터, 77 킬로그램이며, 현재 주급은 약 3억 원이다."
+        >>> tokenizer._tokenize_whitespace_style(text)
+        ['손', '흥', '민', '은', '▁', '2', '8', '세', '의', '▁', '1', '8', '3', '▁', '센', '티',
+         '미', '터', ',', '▁', '7', '7', '▁', '킬', '로', '그', '램', '이', '며', ',', '▁', '현',
+         '재', '▁', '주', '급', '은', '▁', '약', '▁', '3', '억', '▁', '원', '이', '다', '.']
+        """
+        text = text.strip()
+        text = text.replace(" ", self.replacement)
+        text = " ".join([c for c in text])
+
+        text = self._normalize_space(text)
+        tokenized = text.split()
+        return tokenized
+
+
+class DoolyCharBertTokenizer(DoolyCharTokenizer):
+
+    def _tokenize(self, text: str, **kwargs) -> List[str]:
+        return self._tokenize_chatbpe_style(text)
+
 
 # TODO: WSD를 위한 target text tokenize function 작성
 # PORORO WSD transformer:
@@ -44,13 +70,7 @@ class DoolyCharBertTokenizer(DoolyCharTokenizer):
 class DoolyCharSeq2SeqWsdTokenizer(DoolyCharTokenizer):
 
     def _tokenize(self, text: str, **kwargs) -> List[str]:
-        text = text.strip()
-        text = text.replace(" ", self.replacement)
-        text = " ".join([c for c in text])
-
-        text = self._normalize_space(text)
-        tokenized = text.split()
-        return tokenized
+        return self._tokenize_whitespace_style(text)
 
     def build_inputs_with_special_tokens(
         self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
@@ -84,13 +104,7 @@ class DoolyCharSeq2SeqNmtTokenizer(DoolyCharTokenizer):
         )
 
     def _tokenize(self, text: str, **kwargs) -> List[str]:
-        text = text.strip()
-        text = text.replace(" ", self.replacement)
-        text = " ".join([c for c in text])
-
-        text = self._normalize_space(text)
-        tokenized = text.split()
-        return tokenized
+        return self._tokenize_whitespace_style(text)
 
     def __call__(
         self, text, text_pair,
