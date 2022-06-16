@@ -68,10 +68,6 @@ def build_custom_roberta_tokenizer(
     )
 
 
-# To match the class name to avoid warning statements
-# when `config_tokenizer_class` is not None.
-# See here: transformers 133c5e40
-# ./src/transformers/tokenization_utils_base.py#L1825
 class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
     def segment(self, texts: InputTexts) -> TokenizedOutput:
         if isinstance(texts, str):
