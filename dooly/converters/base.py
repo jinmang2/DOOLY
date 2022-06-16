@@ -56,9 +56,7 @@ class DoolyConverter:
             cls.subclasses[cls.name] = cls
 
     @classmethod
-    def load(
-        cls, task: str, lang: str, n_model: str, save_path: str, name: str = None
-    ):
+    def load(cls, task: str, lang: str, n_model: str, save_path: str, name: str = None):
         converter = cls.subclasses.get(task if name is None else name, None)
         assert converter is not None
         config = TaskConfig(task=task, lang=lang, n_model=n_model, save_path=save_path)
@@ -141,10 +139,9 @@ class DoolyConverter:
     def load_and_save_misc(self):
         misc_files = self.get_misc_filenames()
         for misc_file in misc_files:
-            shutil.move(
-                src=os.path.join(self._pororo_save_path, misc_file),
-                dst=self.save_path,
-            )
+            src_path = os.path.join(self._pororo_save_path, misc_file)
+            dst_path = self.save_path
+            shutil.move(src=src_path, dst=dst_path)
 
 
 class FsmtConverter(DoolyConverter):
@@ -205,9 +202,7 @@ class FsmtConverter(DoolyConverter):
     def porting_pororo_to_hf(self, pororo_model, hf_model):
         state_dict = pororo_model.models[0].state_dict()
         # rename keys to start with 'model.'
-        model_state_dict = OrderedDict(
-            ("model." + k, v) for k, v in state_dict.items()
-        )
+        model_state_dict = OrderedDict(("model." + k, v) for k, v in state_dict.items())
         # remove unneeded keys
         ignore_keys = [
             "model.model",
