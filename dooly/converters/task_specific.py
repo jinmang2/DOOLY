@@ -6,7 +6,7 @@ from zipfile import ZipFile
 from .base import DoolyConverter, FsmtConverter, RobertaConverter
 from .kobart_utils import download
 
-from ..tokenizers.hf_tokenizer import (
+from ..tokenizers.fast import (
     convert_vocab_from_fairseq_to_hf,
     build_custom_roberta_tokenizer,
     PreTrainedTokenizerFast,

@@ -2,6 +2,7 @@ import re
 from typing import Optional
 
 from .tasks import DoolyTaskHub
+from .utils import _locate
 
 
 def normalize_task(task: str):
@@ -55,7 +56,7 @@ class Dooly:
             raise KeyError(
                 f"Unavailable task name '{task}'. See here {TASK_ALIASES.keys()}"
             )
-        task_cls = DoolyTaskHub[task]
+        task_cls = _locate(DoolyTaskHub[task])
         if lang is not None:
             lang = LANG_ALIASES.get(lang.lower(), None)
         return task_cls.build(lang, n_model, **kwargs)
@@ -76,9 +77,11 @@ class Dooly:
     def available_models(task: str) -> str:
         if task not in TASK_ALIASES:
             raise KeyError(
-                f"Unknown task {task}. Please check available models via `available_tasks()`."
+                f"Unknown task {task}. "
+                "Please check available models via `available_tasks()`."
             )
-        task_cls = DoolyTaskHub[TASK_ALIASES[normalize_task(task)]]
+        task_cls_path = DoolyTaskHub[TASK_ALIASES[normalize_task(task)]]
+        task_cls = _locate(task_cls_path)
 
         output = f"Available models for `{task}` are "
         for lang, models in task_cls.available_models.items():

@@ -70,10 +70,7 @@ class DoolyConverter:
         config = self.get_model_config(self._pororo_model)
         hf_model = self.intialize_hf_model(config)
 
-        self._hf_model = self.porting_pororo_to_hf(
-            self._pororo_model,
-            hf_model,
-        )
+        self._hf_model = self.porting_pororo_to_hf(self._pororo_model, hf_model)
         self.save_hf_model(self._hf_model)
 
         # convert misc files
@@ -116,7 +113,8 @@ class DoolyConverter:
         raise NotImplementedError
 
     def save_vocab(self, vocab, filename: str = "vocab.json"):
-        with open(os.path.join(self.save_path, filename), "w", encoding="utf-8") as f:
+        save_file_path = os.path.join(self.save_path, filename)
+        with open(save_file_path, "w", encoding="utf-8") as f:
             json.dump(vocab, f, ensure_ascii=False)
 
     def load_and_save_vocab(self):
@@ -141,9 +139,9 @@ class DoolyConverter:
     def load_and_save_misc(self):
         misc_files = self.get_misc_filenames()
         for misc_file in misc_files:
-            shutil.move(
-                src=os.path.join(self._pororo_save_path, misc_file), dst=self.save_path
-            )
+            src_path = os.path.join(self._pororo_save_path, misc_file)
+            dst_path = self.save_path
+            shutil.move(src=src_path, dst=dst_path)
 
 
 class FsmtConverter(DoolyConverter):
@@ -260,19 +258,14 @@ class RobertaConverter(DoolyConverter):
         sent_encoder = pororo_model.model.encoder.sentence_encoder
         # Now let's copy all the weights.
         # Embeddings
-        hf_model.roberta.embeddings.word_embeddings.weight = (
-            sent_encoder.embed_tokens.weight
-        )
-        hf_model.roberta.embeddings.position_embeddings.weight = (
-            sent_encoder.embed_positions.weight
-        )
-        hf_model.roberta.embeddings.token_type_embeddings.weight.data = (
-            torch.zeros_like(hf_model.roberta.embeddings.token_type_embeddings.weight)
+        embeddings = hf_model.roberta.embeddings
+        embeddings.word_embeddings.weight = sent_encoder.embed_tokens.weight
+        embeddings.position_embeddings.weight = sent_encoder.embed_positions.weight
+        embeddings.token_type_embeddings.weight.data = torch.zeros_like(
+            hf_model.roberta.embeddings.token_type_embeddings.weight
         )  # just zero them out b/c RoBERTa doesn't use them.
-        hf_model.roberta.embeddings.LayerNorm.weight = (
-            sent_encoder.emb_layer_norm.weight
-        )
-        hf_model.roberta.embeddings.LayerNorm.bias = sent_encoder.emb_layer_norm.bias
+        embeddings.LayerNorm.weight = sent_encoder.emb_layer_norm.weight
+        embeddings.LayerNorm.bias = sent_encoder.emb_layer_norm.bias
 
         for i in range(hf_model.config.num_hidden_layers):
             # Encoder: start of layer

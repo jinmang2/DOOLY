@@ -1,6 +1,5 @@
 from typing import List, Optional
 from tokenizers import Encoding
-from transformers import PreTrainedTokenizerBase  # noqa
 from transformers import RobertaTokenizerFast as _RobertaTokenizerFast
 from transformers import PreTrainedTokenizerFast as _PreTrainedTokenizerFast
 
@@ -39,26 +38,19 @@ def build_custom_roberta_tokenizer(
     import tokenizers
 
     bpe_obj = tokenizers.models.BPE.from_file(
-        vocab_filename,
-        merges_filename,
-        unk_token="<unk>",
-        fuse_unk=True,
+        vocab_filename, merges_filename, unk_token="<unk>", fuse_unk=True
     )
     # @TODO: Unigram
     _tokenizer = tokenizers.Tokenizer(bpe_obj)
     _tokenizer.normalizer = tokenizers.normalizers.NFKC()
     _tokenizer.pre_tokenizer = tokenizers.pre_tokenizers.Metaspace(
-        replacement=replacement,
-        add_prefix_space=add_prefix_space,
+        replacement=replacement, add_prefix_space=add_prefix_space
     )
     _tokenizer.post_processor = tokenizers.processors.RobertaProcessing(
-        sep=("</s>", 2),
-        cls=("<s>", 0),
-        add_prefix_space=False,
+        sep=("</s>", 2), cls=("<s>", 0), add_prefix_space=False
     )
     _tokenizer.decoder = tokenizers.decoders.Metaspace(
-        replacement=replacement,
-        add_prefix_space=add_prefix_space,
+        replacement=replacement, add_prefix_space=add_prefix_space
     )
 
     return RobertaTokenizerFast(
@@ -68,18 +60,11 @@ def build_custom_roberta_tokenizer(
     )
 
 
-# To match the class name to avoid warning statements
-# when `config_tokenizer_class` is not None.
-# See here: transformers 133c5e40
-# ./src/transformers/tokenization_utils_base.py#L1825
 class RobertaTokenizerFast(_RobertaTokenizerFast, SentTokenizeMixin):
     def segment(self, texts: InputTexts) -> TokenizedOutput:
         if isinstance(texts, str):
             texts = [texts]
-        encodings = self.backend_tokenizer.encode_batch(
-            texts,
-            add_special_tokens=False,
-        )
+        encodings = self.backend_tokenizer.encode_batch(texts, add_special_tokens=False)
         results = []
         for text, encoding in zip(texts, encodings):
             results.append(self._unk_to_raw_text(text, encoding))
