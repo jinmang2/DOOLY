@@ -1,47 +1,39 @@
 from typing import Type
-from transformers.modeling_utils import PreTrainedModel
+import transformers
 
-from .modeling_bart import BartForConditionalGeneration
-from .modeling_fsmt import FSMTForConditionalGeneration
-from .modeling_roberta import (
-    RobertaForDependencyParsing,
-    RobertaForSpanPrediction,
-    RobertaForSequenceTagging,
-    RobertaForSequenceClassification,
-)
-from ..utils import register_subfolder, DOOLY_HUB_NAME
+from ..utils import _locate, register_subfolder, DOOLY_HUB_NAME
 
 
 DoolyModelHub = {
     "dp": {
-        "ko": {"posbert.base": RobertaForDependencyParsing},
+        "ko": {"posbert.base": "modeling_roberta.RobertaForDependencyParsing"},
     },
     "mrc": {
-        "ko": {"brainbert.base": RobertaForSpanPrediction},
+        "ko": {"brainbert.base": "modeling_roberta.RobertaForSpanPrediction"},
     },
     "mt": {
         "multi": {
-            "transformer.large.mtpg": FSMTForConditionalGeneration,
-            "transformer.large.fast.mtpg": FSMTForConditionalGeneration,
+            "transformer.large.mtpg": "modeling_fsmt.FSMTForConditionalGeneration",
+            "transformer.large.fast.mtpg": "modeling_fsmt.FSMTForConditionalGeneration",
         },
     },
     "ner": {
-        "ko": {"charbert.base": RobertaForSequenceTagging},
-        "en": {"roberta.base": RobertaForSequenceTagging},
-        "ja": {"jaberta.base": RobertaForSequenceTagging},
-        "zh": {"zhberta.base": RobertaForSequenceTagging},
+        "ko": {"charbert.base": "modeling_roberta.RobertaForSequenceTagging"},
+        "en": {"roberta.base": "modeling_roberta.RobertaForSequenceTagging"},
+        "ja": {"jaberta.base": "modeling_roberta.RobertaForSequenceTagging"},
+        "zh": {"zhberta.base": "modeling_roberta.RobertaForSequenceTagging"},
     },
     "nli": {
-        "ko": {"brainbert.base": RobertaForSequenceClassification},
-        "en": {"roberta.base": RobertaForSequenceClassification},
-        "ja": {"jaberta.base": RobertaForSequenceClassification},
-        "zh": {"zhberta.base": RobertaForSequenceClassification},
+        "ko": {"brainbert.base": "modeling_roberta.RobertaForSequenceClassification"},
+        "en": {"roberta.base": "modeling_roberta.RobertaForSequenceClassification"},
+        "ja": {"jaberta.base": "modeling_roberta.RobertaForSequenceClassification"},
+        "zh": {"zhberta.base": "modeling_roberta.RobertaForSequenceClassification"},
     },
     "qg": {
-        "ko": {"kobart.base": BartForConditionalGeneration},
+        "ko": {"kobart.base": "modeling_bart.BartForConditionalGeneration"},
     },
     "wsd": {
-        "ko": {"transformer.large": FSMTForConditionalGeneration},
+        "ko": {"transformer.large": "modeling_fsmt.FSMTForConditionalGeneration"},
     },
 }
 DoolyModelHub["bt"] = DoolyModelHub["mt"]
@@ -52,9 +44,9 @@ available_tasks = list(DoolyModelHub.keys())
 
 def load_pretrained_model(
     pretrained_model_name_or_path: str,
-    model_class: Type[PreTrainedModel],
+    model_class: Type[transformers.PreTrainedModel],
     **kwargs,
-) -> PreTrainedModel:
+) -> transformers.PreTrainedModel:
     return model_class.from_pretrained(
         pretrained_model_name_or_path, **kwargs
     )
@@ -62,14 +54,14 @@ def load_pretrained_model(
 
 def load_model_from_dooly_hub(
     subfolder: str,
-    model_class: Type[PreTrainedModel],
+    model_class: Type[transformers.PreTrainedModel],
     **kwargs,
-) -> PreTrainedModel:
+) -> transformers.PreTrainedModel:
 
     @register_subfolder
     def _load_pretrained(
         pretrained_model_name_or_path: str, subfolder: str, **kwargs
-    ) -> PreTrainedModel:
+    ) -> transformers.PreTrainedModel:
         return model_class.from_pretrained(
             pretrained_model_name_or_path, **kwargs
         )
@@ -82,12 +74,12 @@ def load_model_from_dooly_hub(
 
 def load_dooly_model(
     pretrained_model_name_or_path: str = None,
-    model_class: Type[PreTrainedModel] = None,
+    model_class: Type[transformers.PreTrainedModel] = None,
     task: str = None,
     lang: str = None,
     n_model: str = None,
     **kwargs,
-) -> PreTrainedModel:
+) -> transformers.PreTrainedModel:
     if pretrained_model_name_or_path is not None:
         if model_class is None:
             raise ValueError(
@@ -95,7 +87,7 @@ def load_dooly_model(
                 "`model_class` parameter is required."
             )
         return load_pretrained_model(
-            pretrained_model_name_or_path, model_class
+            pretrained_model_name_or_path, model_class, **kwargs
         )
 
     if all([task is None and lang is None and n_model is None]):
@@ -124,7 +116,8 @@ def load_dooly_model(
     subfolder = f"{task}/{lang}/{n_model}"
 
     if model_class is None:
-        model_class = available_models[n_model]
+        module_path = "dooly.models." + available_models[n_model]
+        model_class = _locate(module_path)
 
     return load_model_from_dooly_hub(
         subfolder=subfolder, model_class=model_class, **kwargs

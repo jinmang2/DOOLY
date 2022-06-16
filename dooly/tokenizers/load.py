@@ -1,55 +1,39 @@
 from typing import Type
 
-from .bpe import (
-    DoolyGPT2TokenizerFast,
-    DoolyBertJaTokenizer,
-    DoolyBertZhTokenizer,
-)
-from .char import (
-    DoolyCharBertTokenizer,
-    DoolyCharSeq2SeqWsdTokenizer,
-    DoolyCharSeq2SeqNmtTokenizer,
-)
-from .fast import (
-    PreTrainedTokenizerFast,
-    RobertaTokenizerFast,
-)
-from .pos_tagger import (
-    DoolyPosDpTokenizer,
-)
-from ..utils import DOOLY_HUB_NAME
+import transformers
+from ..utils import _locate, DOOLY_HUB_NAME
 
 
 DoolyTokenizerHub = {
     "dp": {
-        "ko": {"posbert.base": DoolyPosDpTokenizer},
+        "ko": {"posbert.base": "pos_tagger.DoolyPosDpTokenizer"},
     },
     "mrc": {
-        "ko": {"brainbert.base": RobertaTokenizerFast},
+        "ko": {"brainbert.base": "fast.RobertaTokenizerFast"},
     },
     "mt": {
         "multi": {
-            "transformer.large.mtpg": DoolyCharSeq2SeqNmtTokenizer,
-            "transformer.large.fast.mtpg": DoolyCharSeq2SeqNmtTokenizer,
+            "transformer.large.mtpg": "char.DoolyCharSeq2SeqNmtTokenizer",
+            "transformer.large.fast.mtpg": "char.DoolyCharSeq2SeqNmtTokenizer",
         },
     },
     "ner": {
-        "ko": {"charbert.base": DoolyCharBertTokenizer},
-        "en": {"roberta.base": DoolyGPT2TokenizerFast},
-        "ja": {"jaberta.base": DoolyBertJaTokenizer},
-        "zh": {"zhberta.base": DoolyBertZhTokenizer},
+        "ko": {"charbert.base": "char.DoolyCharBertTokenizer"},
+        "en": {"roberta.base": "bpe.DoolyGPT2TokenizerFast"},
+        "ja": {"jaberta.base": "bpe.DoolyBertJaTokenizer"},
+        "zh": {"zhberta.base": "bpe.DoolyBertZhTokenizer"},
     },
     "nli": {
-        "ko": {"brainbert.base": RobertaTokenizerFast},
-        "en": {"roberta.base": DoolyGPT2TokenizerFast},
-        "ja": {"jaberta.base": DoolyBertJaTokenizer},
-        "zh": {"zhberta.base": DoolyBertZhTokenizer},
+        "ko": {"brainbert.base": "fast.RobertaTokenizerFast"},
+        "en": {"roberta.base": "bpe.DoolyGPT2TokenizerFast"},
+        "ja": {"jaberta.base": "bpe.DoolyBertJaTokenizer"},
+        "zh": {"zhberta.base": "bpe.DoolyBertZhTokenizer"},
     },
     "qg": {
-        "ko": {"kobart.base": PreTrainedTokenizerFast},
+        "ko": {"kobart.base": "bpe.PreTrainedTokenizerFast"},
     },
     "wsd": {
-        "ko": {"transformer.large": DoolyCharSeq2SeqWsdTokenizer},
+        "ko": {"transformer.large": "char.DoolyCharSeq2SeqWsdTokenizer"},
     },
 }
 DoolyTokenizerHub["bt"] = DoolyTokenizerHub["mt"]
@@ -60,9 +44,9 @@ available_tasks = list(DoolyTokenizerHub.keys())
 
 def load_pretrained_tokenizer(
     pretrained_model_name_or_path: str,
-    tokenizer_class: Type[PreTrainedTokenizer],
+    tokenizer_class: Type[transformers.PreTrainedTokenizer],
     **kwargs,
-) -> PreTrainedTokenizer:
+) -> transformers.PreTrainedTokenizer:
     return tokenizer_class.from_pretrained(
         pretrained_model_name_or_path, **kwargs
     )
@@ -70,9 +54,9 @@ def load_pretrained_tokenizer(
 
 def load_tokenizer_from_dooly_hub(
     subfolder: str,
-    tokenizer_class: Type[PreTrainedTokenizer],
+    tokenizer_class: Type[transformers.PreTrainedTokenizer],
     **kwargs,
-) -> PreTrainedTokenizer:
+) -> transformers.PreTrainedTokenizer:
 
     def _load_pretrained(
         pretrained_model_name_or_path: str, subfolder: str, **kwargs
@@ -89,12 +73,12 @@ def load_tokenizer_from_dooly_hub(
 
 def load_dooly_tokenizer(
     pretrained_model_name_or_path: str = None,
-    tokenizer_class: Type[PreTrainedTokenizer] = None,
+    tokenizer_class: Type[transformers.PreTrainedTokenizer] = None,
     task: str = None,
     lang: str = None,
     n_model: str = None,
     **kwargs,
-) -> PreTrainedTokenizer:
+) -> transformers.PreTrainedTokenizer:
     if pretrained_model_name_or_path is not None:
         if tokenizer_class is None:
             raise ValueError(
@@ -102,7 +86,7 @@ def load_dooly_tokenizer(
                 "`tokenizer_class` parameter is required."
             )
         return load_pretrained_tokenizer(
-            pretrained_model_name_or_path, tokenizer_class
+            pretrained_model_name_or_path, tokenizer_class, **kwargs
         )
 
     if all([task is None and lang is None and n_model is None]):
@@ -134,7 +118,8 @@ def load_dooly_tokenizer(
         subfolder += f"/{subfolder_postfix}"
 
     if tokenizer_class is None:
-        tokenizer_class = available_models[n_model]
+        module_path = "dooly.tokenizers." + available_models[n_model]
+        tokenizer_class = _locate(module_path)
 
     kwargs.update({"task": task, "lang": lang, "n_model": n_model})
 

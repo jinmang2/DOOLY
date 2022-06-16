@@ -2,13 +2,17 @@ from typing import List
 from functools import lru_cache
 
 from dataclasses import dataclass
+import transformers
 from transformers import GPT2TokenizerFast
 from transformers import BertTokenizer, BertJapaneseTokenizer
 
 from .load import load_dooly_tokenizer
 from .base import DoolyPreTrainedTokenizer
-from ..utils import recover_original_hf_bucket_url
-from ..utils.import_utils import is_available_ipadic, is_available_fugashi
+from ..utils import (
+    recover_original_hf_bucket_url,
+    is_available_ipadic,
+    is_available_fugashi,
+)
 
 
 """
@@ -100,7 +104,7 @@ class DoolyGPT2TokenizerFast(DoolyPreTrainedTokenizer):
 class DoolyBertTokenizer(DoolyPreTrainedTokenizer):
     replacement: str = "##"
     wp_path: str = None
-    wp_tok_class: PreTrainedTokenizer = None
+    wp_tok_class: transformers.PreTrainedTokenizer = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -122,7 +126,7 @@ class DoolyBertTokenizer(DoolyPreTrainedTokenizer):
 
 class DoolyBertJaTokenizer(DoolyBertTokenizer):
     wp_path: str = "cl-tohoku/bert-base-japanese-whole-word-masking"
-    wp_tok_class: PreTrainedTokenizer = BertJapaneseTokenizer
+    wp_tok_class: transformers.PreTrainedTokenizer = BertJapaneseTokenizer
 
     def __init__(self, **kwargs):
         if is_available_ipadic():
@@ -142,4 +146,4 @@ class DoolyBertJaTokenizer(DoolyBertTokenizer):
 
 class DoolyBertZhTokenizer(DoolyBertTokenizer):
     wp_path: str = "bert-base-chinese"
-    wp_tok_class: PreTrainedTokenizer = BertTokenizer
+    wp_tok_class: transformers.PreTrainedTokenizer = BertTokenizer
